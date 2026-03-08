@@ -17,6 +17,8 @@ const Navigate = () => {
   const [hapticEnabled, setHapticEnabled] = useState(true);
   const [aiScanning, setAiScanning] = useState(false);
   const [autoScan, setAutoScan] = useState(false);
+  const [busTrackingActive, setBusTrackingActive] = useState(true);
+  const { buses } = useMockBusTracker(busTrackingActive);
   const autoScanRef = useRef(false);
   const cameraRef = useRef<CameraFeedRef>(null);
   const scanningRef = useRef(false);
