@@ -1,7 +1,6 @@
 import { useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Mic, Navigation, Volume2 } from "lucide-react";
+import { Navigation, Volume2 } from "lucide-react";
 import { useSpeech } from "@/hooks/useSpeech";
 import { useVoiceCommand } from "@/hooks/useVoiceCommand";
 
@@ -21,16 +20,23 @@ const Home = () => {
         handleStartNavigation();
       } else if (lower.includes("start") || lower.includes("navigate")) {
         handleStartNavigation();
+      } else if (lower.includes("help")) {
+        speak("You can say: Start navigation, Find my bus, or Navigate.");
+      } else {
+        speak(`I heard: ${command}. Say Start navigation or Find my bus to begin.`);
       }
     },
-    [handleStartNavigation]
+    [handleStartNavigation, speak]
   );
 
-  const { isListening, startListening } = useVoiceCommand(handleVoiceCommand);
+  // Auto-start voice recognition — fully hands-free
+  const { isListening } = useVoiceCommand(handleVoiceCommand, true);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      speak("Welcome to EyeGuide Plus. Say Find my bus to start.");
+      speak(
+        "Welcome to EyeGuide Plus. I am listening. Say Start navigation or Find my bus to begin."
+      );
     }, 500);
     return () => clearTimeout(timer);
   }, [speak]);
@@ -53,36 +59,19 @@ const Home = () => {
         </p>
       </div>
 
-      <div className="flex flex-col items-center gap-5 w-full max-w-sm">
-        <Button
-          variant="nav"
-          size="xl"
-          className="w-full focus-ring"
-          onClick={handleStartNavigation}
-          aria-label="Start Navigation"
-        >
-          <Navigation className="h-8 w-8 mr-2" aria-hidden="true" />
-          Start Navigation
-        </Button>
-
-        <Button
-          variant="outline"
-          size="lg"
-          className="w-full focus-ring"
-          onClick={startListening}
-          aria-label={isListening ? "Listening for voice command" : "Activate voice command"}
-        >
-          <Mic className={`h-6 w-6 mr-2 ${isListening ? "text-primary animate-pulse" : ""}`} aria-hidden="true" />
-          {isListening ? "Listening…" : "Voice Command"}
-        </Button>
-      </div>
-
       <div
-        className="mt-8 flex items-center gap-2 text-muted-foreground text-sm"
+        className="flex flex-col items-center gap-4 w-full max-w-sm"
         aria-live="polite"
       >
-        <Volume2 className="h-4 w-4" aria-hidden="true" />
-        <span>Say "Find my bus" or tap Start Navigation</span>
+        <div className="flex items-center gap-2 text-primary animate-pulse">
+          <Volume2 className="h-8 w-8" aria-hidden="true" />
+          <span className="text-lg font-semibold">
+            {isListening ? "Listening… speak a command" : "Initializing voice…"}
+          </span>
+        </div>
+        <span className="text-sm text-muted-foreground text-center">
+          Say "Start navigation", "Find my bus", or "Help"
+        </span>
       </div>
     </main>
   );
