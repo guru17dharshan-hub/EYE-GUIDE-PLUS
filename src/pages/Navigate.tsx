@@ -26,6 +26,9 @@ const Navigate = () => {
   const [aiThinking, setAiThinking] = useState(false);
   const { buses } = useMockBusTracker(busTrackingActive);
   const { contacts, addContact, removeContact, callContact, callAll } = useEmergencyContacts();
+  const { position, error: geoError } = useGeolocation(true);
+  const { locations, setHome, addLocation, getHome, getFrequent } = useSavedLocations();
+  const [showMap, setShowMap] = useState(false);
   const autoScanRef = useRef(false);
   const cameraRef = useRef<CameraFeedRef>(null);
   const scanningRef = useRef(false);
