@@ -1,3 +1,4 @@
+// @refresh reset
 import { useState, useCallback, useRef } from "react";
 
 export interface LanguageConfig {
