@@ -455,6 +455,14 @@ const Navigate = () => {
         <BusTracker buses={buses} />
       </section>
 
+      {/* Quick Action Buttons */}
+      <QuickActions
+        onAction={handleVoiceCommand}
+        autoScan={autoScan}
+        hapticEnabled={hapticEnabled}
+        showMap={showMap}
+      />
+
       {/* Alert Log */}
       <section className="p-4 bg-card border-t border-border" aria-label="Audio alerts">
         <AlertLog alerts={alerts} />
