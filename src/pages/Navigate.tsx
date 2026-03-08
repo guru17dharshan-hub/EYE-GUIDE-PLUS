@@ -93,6 +93,8 @@ const Navigate = () => {
     prevHeadingRef.current = heading;
   }, [position?.heading, boardingState.phase, speak]);
 
+  const prevPhaseRef = useRef(boardingState.phase);
+
   // Auto-start trip when boarding begins
   useEffect(() => {
     if (boardingState.phase === "boarding") {
@@ -104,8 +106,6 @@ const Navigate = () => {
     }
     prevPhaseRef.current = boardingState.phase;
   }, [boardingState.phase, boardingState.busRoute, startTrip, endTrip]);
-
-  const prevPhaseRef = useRef(boardingState.phase);
 
   const addAlert = useCallback(
     (message: string, vibrate = true, priority: "normal" | "high" = "normal") => {
