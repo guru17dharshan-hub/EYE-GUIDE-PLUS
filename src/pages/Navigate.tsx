@@ -651,8 +651,16 @@ const Navigate = () => {
     setLang(language.voiceLang);
   }, [language.voiceLang, setLang]);
 
+  // Auto-detect language from raw transcript
+  const handleTranscriptRaw = useCallback((transcript: string) => {
+    const detected = autoDetectAndSwitch(transcript);
+    if (detected.shortCode !== language.shortCode) {
+      addAlert(`🌐 Auto-detected: ${detected.name}`);
+    }
+  }, [autoDetectAndSwitch, language.shortCode, addAlert]);
+
   // Auto-start continuous voice recognition with selected language
-  const { isListening } = useVoiceCommand(handleVoiceCommand, true, isSpeaking, language.code);
+  const { isListening } = useVoiceCommand(handleVoiceCommand, true, isSpeaking, language.code, handleTranscriptRaw);
 
   useEffect(() => {
     const timer = setTimeout(() => {
