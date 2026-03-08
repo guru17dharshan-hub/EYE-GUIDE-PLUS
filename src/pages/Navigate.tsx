@@ -65,14 +65,23 @@ const Navigate = () => {
     setAiScanning(true);
 
     try {
+      const boardingContext = boardingState.phase !== "idle"
+        ? { phase: boardingState.phase, prompt: getPromptContext() }
+        : undefined;
+
       const { data, error } = await supabase.functions.invoke("detect-objects", {
-        body: { image: frame },
+        body: { image: frame, boarding_context: boardingContext },
       });
 
       if (error) {
         console.error("Detection error:", error);
         toast.error("AI detection failed");
         return;
+      }
+
+      // Feed results into boarding state machine
+      if (data) {
+        processDetection(data);
       }
 
       if (data?.alert) {
@@ -93,7 +102,7 @@ const Navigate = () => {
       scanningRef.current = false;
       setAiScanning(false);
     }
-  }, [addAlert, hapticEnabled]);
+  }, [addAlert, hapticEnabled, boardingState.phase, getPromptContext, processDetection]);
 
   const askAI = useCallback(async (question: string) => {
     setAiThinking(true);
