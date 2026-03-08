@@ -20,6 +20,7 @@ import QuickActions from "@/components/QuickActions";
 import ManagePanel from "@/components/ManagePanel";
 import { useTransitCardScanner } from "@/hooks/useTransitCardScanner";
 import { useFallDetection } from "@/hooks/useFallDetection";
+import { useTripFeedback } from "@/hooks/useTripFeedback";
 
 const Navigate = () => {
   const navigate = useNavigate();
@@ -68,8 +69,43 @@ const Navigate = () => {
   const { fallDetected, confirmSafe } = useFallDetection({
     onFallDetected: handleFallDetected,
     onFallConfirmed: handleFallConfirmed,
-    enabled: hapticEnabled, // Use haptic toggle as proxy for motion features
+    enabled: hapticEnabled,
   });
+
+  // Trip feedback system
+  const { feedbackState, startTrip, endTrip, processVoiceInput: processFeedbackInput, cancelFeedback, isFeedbackActive } = useTripFeedback(speak, hapticEnabled);
+
+  // Track previous heading for recalibration
+  const prevHeadingRef = useRef<number | null>(null);
+  const headingChangeThreshold = 45; // degrees
+
+  // Heading-based recalibration alerts
+  useEffect(() => {
+    if (!position?.heading || position.heading === null) return;
+    const heading = position.heading;
+    if (prevHeadingRef.current !== null) {
+      const delta = Math.abs(heading - prevHeadingRef.current);
+      const normalized = delta > 180 ? 360 - delta : delta;
+      if (normalized > headingChangeThreshold && (boardingState.phase === "post_exit" || boardingState.phase === "approaching")) {
+        speak("Direction changed. Recalibrating guidance.");
+      }
+    }
+    prevHeadingRef.current = heading;
+  }, [position?.heading, boardingState.phase, speak]);
+
+  const prevPhaseRef = useRef(boardingState.phase);
+
+  // Auto-start trip when boarding begins
+  useEffect(() => {
+    if (boardingState.phase === "boarding") {
+      startTrip(boardingState.busRoute);
+    }
+    // Trigger feedback when trip ends (reset from seated/post_exit)
+    if (boardingState.phase === "idle" && prevPhaseRef.current === "post_exit") {
+      endTrip();
+    }
+    prevPhaseRef.current = boardingState.phase;
+  }, [boardingState.phase, boardingState.busRoute, startTrip, endTrip]);
 
   const addAlert = useCallback(
     (message: string, vibrate = true, priority: "normal" | "high" = "normal") => {
@@ -77,6 +113,13 @@ const Navigate = () => {
       speak(message, priority);
       if (vibrate && hapticEnabled && navigator.vibrate) {
         navigator.vibrate(200);
+      }
+      // Design principle: Critical alerts are repeated twice with vibration
+      if (priority === "high") {
+        setTimeout(() => {
+          speak(message, priority);
+          if (hapticEnabled && navigator.vibrate) navigator.vibrate([300, 100, 300]);
+        }, 3000);
       }
     },
     [speak, hapticEnabled]
@@ -257,6 +300,16 @@ const Navigate = () => {
     (command: string) => {
       const lower = command.toLowerCase();
       setVoiceTranscripts((prev) => [`🎙️ ${command}`, ...prev].slice(0, 10));
+
+      // ---- Trip feedback state machine (highest priority) ----
+      if (isFeedbackActive) {
+        if (lower.includes("cancel") || lower.includes("skip feedback")) {
+          cancelFeedback();
+          return;
+        }
+        const handled = processFeedbackInput(command);
+        if (handled) return;
+      }
 
       // ---- Voice contact state machine ----
       if (voiceContactModeRef.current === "awaiting_name") {
@@ -473,13 +526,17 @@ const Navigate = () => {
           navigate("/");
         }
       }
+      // Rate trip manually
+      else if (lower.includes("rate trip") || lower.includes("rate my trip") || lower.includes("trip feedback")) {
+        endTrip();
+      }
       // Help
       else if (lower.includes("help") || lower.includes("command") || lower.includes("what can")) {
         addAlert(
           "Available commands: Scan, Find bus, Detect seat, Bus status, Scan card, " +
           "Auto scan on, Auto scan off, Haptic on, Haptic off, " +
           "Add contact, My contacts, Call, Remove contact, Emergency, SOS, " +
-          "My stop is [name], Prepare to exit, I'm okay, " +
+          "My stop is [name], Prepare to exit, I'm okay, Rate trip, " +
           "Where am I, Show map, Save home, Save location, My places, Go home. " +
           "You can also ask me any question and I will answer."
         );
@@ -489,7 +546,7 @@ const Navigate = () => {
         askAI(command);
       }
     },
-    [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI, contacts, addContact, removeContact, callContact, extractPhoneFromSpeech, position, setHome, addLocation, getHome, getFrequent, locations, scanFromDataUrl, qrSupported, fallDetected, confirmSafe, setDestination]
+    [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI, contacts, addContact, removeContact, callContact, extractPhoneFromSpeech, position, setHome, addLocation, getHome, getFrequent, locations, scanFromDataUrl, qrSupported, fallDetected, confirmSafe, setDestination, isFeedbackActive, processFeedbackInput, cancelFeedback, endTrip]
   );
 
   // Auto-start continuous voice recognition
@@ -685,6 +742,33 @@ const Navigate = () => {
           </div>
         )}
       </section>
+
+      {/* Trip Feedback Banner */}
+      {isFeedbackActive && (
+        <section
+          className="px-4 py-3 border-t border-border bg-accent/20 flex items-center gap-3"
+          aria-live="assertive"
+          aria-label="Trip feedback"
+        >
+          <span className="text-lg" aria-hidden="true">⭐</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">
+              Trip Feedback — {feedbackState.phase === "rating" ? "Rate 1-5" : feedbackState.phase === "comment" ? "Any comments?" : "Save route?"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {feedbackState.phase === "rating" && "Say a number from 1 to 5, or say Skip."}
+              {feedbackState.phase === "comment" && "Describe your trip, or say Skip."}
+              {feedbackState.phase === "save_route" && "Say Yes to save this route, or No."}
+            </p>
+          </div>
+          <button
+            onClick={cancelFeedback}
+            className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-accent"
+          >
+            Skip
+          </button>
+        </section>
+      )}
 
       {/* Quick Action Buttons */}
       <QuickActions
