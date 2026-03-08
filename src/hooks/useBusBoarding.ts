@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { getBoardingHaptic } from "@/utils/haptics";
 
 export type BoardingPhase =
   | "idle"        // No bus detected
