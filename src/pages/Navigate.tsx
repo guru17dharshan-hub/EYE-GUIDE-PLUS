@@ -584,9 +584,13 @@ const Navigate = () => {
           className={`px-4 py-3 border-t border-border flex flex-col gap-2 ${
             boardingState.phase === "seated"
               ? "bg-green-500/10 border-green-500/30"
-              : boardingState.phase === "boarding"
-                ? "bg-orange-500/10 border-orange-500/30"
-                : "bg-primary/10 border-primary/30"
+              : boardingState.phase === "exiting"
+                ? "bg-red-500/10 border-red-500/30"
+                : boardingState.phase === "post_exit"
+                  ? "bg-blue-500/10 border-blue-500/30"
+                  : boardingState.phase === "boarding"
+                    ? "bg-orange-500/10 border-orange-500/30"
+                    : "bg-primary/10 border-primary/30"
           }`}
           aria-live="assertive"
           aria-label="Bus boarding assistance"
@@ -594,17 +598,19 @@ const Navigate = () => {
           <div className="flex items-center gap-3">
             <div className={`h-3 w-3 rounded-full shrink-0 animate-pulse ${
               boardingState.phase === "seated" ? "bg-green-500"
+                : boardingState.phase === "exiting" ? "bg-red-500"
+                : boardingState.phase === "post_exit" ? "bg-blue-500"
                 : boardingState.phase === "boarding" ? "bg-orange-500"
                 : "bg-primary"
             }`} />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-foreground">
-                🚌 Boarding Assistant — {boardingState.phase.replace("_", " ").toUpperCase()}
+                {boardingState.phase === "post_exit" ? "🚶" : "🚌"} {boardingState.phase === "post_exit" ? "Outdoor Navigation" : "Boarding Assistant"} — {boardingState.phase.replace("_", " ").toUpperCase()}
                 {boardingState.busRoute && ` (Route ${boardingState.busRoute})`}
               </p>
               <p className="text-xs text-muted-foreground">{boardingState.instructions}</p>
             </div>
-            {boardingState.phase === "seated" && (
+            {(boardingState.phase === "seated" || boardingState.phase === "post_exit") && (
               <button
                 onClick={() => resetBoarding()}
                 className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-accent"
@@ -613,18 +619,44 @@ const Navigate = () => {
               </button>
             )}
           </div>
-          {/* Seat direction info */}
           {boardingState.phase === "finding_seat" && boardingState.lastSeatDirection && (
             <p className="text-xs text-primary font-medium ml-6">
               💺 Seat spotted: {boardingState.lastSeatDirection}
             </p>
           )}
-          {/* Next stop info */}
           {boardingState.phase === "seated" && boardingState.nextStop && (
             <p className="text-xs text-foreground font-medium ml-6">
               📍 Next stop: {boardingState.nextStop}
+              {boardingState.isApproachingDestination && (
+                <span className="text-red-500 font-bold animate-pulse ml-2">⚠️ YOUR STOP IS NEXT!</span>
+              )}
             </p>
           )}
+          {boardingState.phase === "seated" && boardingState.destinationStop && (
+            <p className="text-xs text-muted-foreground ml-6">
+              🎯 Destination: {boardingState.destinationStop}
+            </p>
+          )}
+        </section>
+      )}
+
+      {/* Fall Detection Alert */}
+      {fallDetected && (
+        <section
+          className="px-4 py-3 border-t border-destructive bg-destructive/15 flex items-center gap-3"
+          aria-live="assertive"
+        >
+          <AlertTriangle className="h-5 w-5 text-destructive shrink-0 animate-pulse" />
+          <div className="flex-1">
+            <p className="text-sm font-bold text-destructive">Fall Detected!</p>
+            <p className="text-xs text-muted-foreground">Say "I'm okay" or tap below to cancel the alert.</p>
+          </div>
+          <button
+            onClick={() => { confirmSafe(); addAlert("Fall alert cancelled. Glad you're okay!"); }}
+            className="text-xs px-3 py-1.5 rounded-lg bg-destructive text-destructive-foreground font-semibold"
+          >
+            I'm Okay
+          </button>
         </section>
       )}
 
