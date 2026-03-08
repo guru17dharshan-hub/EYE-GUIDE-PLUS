@@ -478,6 +478,7 @@ const Navigate = () => {
         autoScan={autoScan}
         hapticEnabled={hapticEnabled}
         showMap={showMap}
+        onOpenManage={() => setShowManage(true)}
       />
 
       {/* Alert Log */}
