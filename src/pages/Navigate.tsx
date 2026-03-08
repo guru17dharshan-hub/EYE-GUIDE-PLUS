@@ -69,8 +69,43 @@ const Navigate = () => {
   const { fallDetected, confirmSafe } = useFallDetection({
     onFallDetected: handleFallDetected,
     onFallConfirmed: handleFallConfirmed,
-    enabled: hapticEnabled, // Use haptic toggle as proxy for motion features
+    enabled: hapticEnabled,
   });
+
+  // Trip feedback system
+  const { feedbackState, startTrip, endTrip, processVoiceInput: processFeedbackInput, cancelFeedback, isFeedbackActive } = useTripFeedback(speak, hapticEnabled);
+
+  // Track previous heading for recalibration
+  const prevHeadingRef = useRef<number | null>(null);
+  const headingChangeThreshold = 45; // degrees
+
+  // Heading-based recalibration alerts
+  useEffect(() => {
+    if (!position?.heading || position.heading === null) return;
+    const heading = position.heading;
+    if (prevHeadingRef.current !== null) {
+      const delta = Math.abs(heading - prevHeadingRef.current);
+      const normalized = delta > 180 ? 360 - delta : delta;
+      if (normalized > headingChangeThreshold && (boardingState.phase === "post_exit" || boardingState.phase === "approaching")) {
+        speak("Direction changed. Recalibrating guidance.");
+      }
+    }
+    prevHeadingRef.current = heading;
+  }, [position?.heading, boardingState.phase, speak]);
+
+  // Auto-start trip when boarding begins
+  useEffect(() => {
+    if (boardingState.phase === "boarding") {
+      startTrip(boardingState.busRoute);
+    }
+    // Trigger feedback when trip ends (reset from seated/post_exit)
+    if (boardingState.phase === "idle" && prevPhaseRef.current === "post_exit") {
+      endTrip();
+    }
+    prevPhaseRef.current = boardingState.phase;
+  }, [boardingState.phase, boardingState.busRoute, startTrip, endTrip]);
+
+  const prevPhaseRef = useRef(boardingState.phase);
 
   const addAlert = useCallback(
     (message: string, vibrate = true, priority: "normal" | "high" = "normal") => {
@@ -78,6 +113,13 @@ const Navigate = () => {
       speak(message, priority);
       if (vibrate && hapticEnabled && navigator.vibrate) {
         navigator.vibrate(200);
+      }
+      // Design principle: Critical alerts are repeated twice with vibration
+      if (priority === "high") {
+        setTimeout(() => {
+          speak(message, priority);
+          if (hapticEnabled && navigator.vibrate) navigator.vibrate([300, 100, 300]);
+        }, 3000);
       }
     },
     [speak, hapticEnabled]
