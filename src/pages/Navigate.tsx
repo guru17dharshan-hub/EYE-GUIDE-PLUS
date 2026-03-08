@@ -30,6 +30,7 @@ const Navigate = () => {
   const { position, error: geoError } = useGeolocation(true);
   const { locations, setHome, addLocation, getHome, getFrequent } = useSavedLocations();
   const [showMap, setShowMap] = useState(false);
+  const [cameraExpanded, setCameraExpanded] = useState(false);
   const autoScanRef = useRef(false);
   const cameraRef = useRef<CameraFeedRef>(null);
   const scanningRef = useRef(false);
