@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.ask-ai]
 verify_jwt = false
+
+[functions.embed-document]
+verify_jwt = false
+
+[functions.seed-knowledge]
+verify_jwt = false
