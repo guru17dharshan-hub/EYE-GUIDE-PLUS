@@ -27,7 +27,7 @@ import { useLanguage, SUPPORTED_LANGUAGES } from "@/hooks/useLanguage";
 const Navigate = () => {
   const navigate = useNavigate();
   const { speak, isSpeaking, setLang } = useSpeech();
-  const { language, setLanguage, languages } = useLanguage();
+  const { language, setLanguage, autoDetectAndSwitch, languages } = useLanguage();
   const [showLangPicker, setShowLangPicker] = useState(false);
   const [hapticEnabled, setHapticEnabled] = useState(true);
   const [aiScanning, setAiScanning] = useState(false);
