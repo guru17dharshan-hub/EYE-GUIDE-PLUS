@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, ArrowLeft, Camera, Eye, Vibrate, Volume2, VolumeX, Loader2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Camera, Eye, Vibrate, Volume2, VolumeX, Loader2, Phone } from "lucide-react";
 import { useSpeech } from "@/hooks/useSpeech";
 import { useVoiceCommand } from "@/hooks/useVoiceCommand";
 import CameraFeed, { CameraFeedRef } from "@/components/CameraFeed";
