@@ -539,31 +539,49 @@ const Navigate = () => {
       {/* Boarding Assistance Banner */}
       {boardingState.phase !== "idle" && (
         <section
-          className={`px-4 py-3 border-t border-border flex items-center gap-3 ${
+          className={`px-4 py-3 border-t border-border flex flex-col gap-2 ${
             boardingState.phase === "seated"
               ? "bg-green-500/10 border-green-500/30"
-              : "bg-primary/10 border-primary/30"
+              : boardingState.phase === "boarding"
+                ? "bg-orange-500/10 border-orange-500/30"
+                : "bg-primary/10 border-primary/30"
           }`}
           aria-live="assertive"
           aria-label="Bus boarding assistance"
         >
-          <div className={`h-3 w-3 rounded-full shrink-0 animate-pulse ${
-            boardingState.phase === "seated" ? "bg-green-500" : "bg-primary"
-          }`} />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground">
-              🚌 Boarding Assistant — {boardingState.phase.replace("_", " ").toUpperCase()}
-              {boardingState.busRoute && ` (Route ${boardingState.busRoute})`}
-            </p>
-            <p className="text-xs text-muted-foreground">{boardingState.instructions}</p>
+          <div className="flex items-center gap-3">
+            <div className={`h-3 w-3 rounded-full shrink-0 animate-pulse ${
+              boardingState.phase === "seated" ? "bg-green-500"
+                : boardingState.phase === "boarding" ? "bg-orange-500"
+                : "bg-primary"
+            }`} />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground">
+                🚌 Boarding Assistant — {boardingState.phase.replace("_", " ").toUpperCase()}
+                {boardingState.busRoute && ` (Route ${boardingState.busRoute})`}
+              </p>
+              <p className="text-xs text-muted-foreground">{boardingState.instructions}</p>
+            </div>
+            {boardingState.phase === "seated" && (
+              <button
+                onClick={() => resetBoarding()}
+                className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-accent"
+              >
+                Done
+              </button>
+            )}
           </div>
-          {boardingState.phase === "seated" && (
-            <button
-              onClick={() => resetBoarding()}
-              className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-accent"
-            >
-              Done
-            </button>
+          {/* Seat direction info */}
+          {boardingState.phase === "finding_seat" && boardingState.lastSeatDirection && (
+            <p className="text-xs text-primary font-medium ml-6">
+              💺 Seat spotted: {boardingState.lastSeatDirection}
+            </p>
+          )}
+          {/* Next stop info */}
+          {boardingState.phase === "seated" && boardingState.nextStop && (
+            <p className="text-xs text-foreground font-medium ml-6">
+              📍 Next stop: {boardingState.nextStop}
+            </p>
           )}
         </section>
       )}
