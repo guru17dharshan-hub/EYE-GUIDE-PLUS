@@ -407,27 +407,39 @@ const Navigate = () => {
         </div>
       </header>
 
-      {/* Camera Feed - compact left tab */}
-      <section className="flex items-start gap-3 p-3 bg-card border-b border-border" aria-label="Camera feed">
-        <div className="relative w-32 h-24 rounded-xl overflow-hidden border border-border shrink-0">
+      {/* Camera Feed - click to toggle size */}
+      <section
+        className="flex items-start gap-3 p-3 bg-card border-b border-border cursor-pointer"
+        aria-label="Camera feed — tap to enlarge"
+        onClick={() => setCameraExpanded((prev) => !prev)}
+      >
+        <div className={`relative rounded-xl overflow-hidden border border-border shrink-0 transition-all duration-300 ${cameraExpanded ? "w-full h-[300px]" : "w-32 h-24"}`}>
           <CameraFeed ref={cameraRef} />
         </div>
-        <div className="flex-1 flex items-center gap-2 min-h-[96px]">
-          {aiScanning ? (
-            <Loader2 className="h-5 w-5 text-primary shrink-0 animate-spin" aria-hidden="true" />
-          ) : (
+        {!cameraExpanded && (
+          <div className="flex-1 flex items-center gap-2 min-h-[96px]">
+            {aiScanning ? (
+              <Loader2 className="h-5 w-5 text-primary shrink-0 animate-spin" aria-hidden="true" />
+            ) : (
+              <Camera className="h-5 w-5 text-primary shrink-0" aria-hidden="true" />
+            )}
+            <span className="text-sm text-foreground" aria-live="polite">
+              {aiScanning
+                ? "🤖 AI analyzing frame…"
+                : aiThinking
+                  ? "🤖 AI thinking…"
+                  : isListening
+                    ? "🎙️ Listening — say a command or ask anything"
+                    : "Camera active"}
+            </span>
+          </div>
+        )}
+        {cameraExpanded && (
+          <div className="absolute bottom-6 left-6 right-6 flex items-center gap-2 bg-card/80 backdrop-blur-sm rounded-xl p-3 border border-border">
             <Camera className="h-5 w-5 text-primary shrink-0" aria-hidden="true" />
-          )}
-          <span className="text-sm text-foreground" aria-live="polite">
-            {aiScanning
-              ? "🤖 AI analyzing frame…"
-              : aiThinking
-                ? "🤖 AI thinking…"
-                : isListening
-                  ? "🎙️ Listening — say a command or ask anything"
-                  : "Camera active"}
-          </span>
-        </div>
+            <span className="text-xs text-muted-foreground">Tap to minimize</span>
+          </div>
+        )}
       </section>
 
       {/* Location Map */}
