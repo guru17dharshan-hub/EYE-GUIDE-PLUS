@@ -743,6 +743,33 @@ const Navigate = () => {
         )}
       </section>
 
+      {/* Trip Feedback Banner */}
+      {isFeedbackActive && (
+        <section
+          className="px-4 py-3 border-t border-border bg-accent/20 flex items-center gap-3"
+          aria-live="assertive"
+          aria-label="Trip feedback"
+        >
+          <span className="text-lg" aria-hidden="true">⭐</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">
+              Trip Feedback — {feedbackState.phase === "rating" ? "Rate 1-5" : feedbackState.phase === "comment" ? "Any comments?" : "Save route?"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {feedbackState.phase === "rating" && "Say a number from 1 to 5, or say Skip."}
+              {feedbackState.phase === "comment" && "Describe your trip, or say Skip."}
+              {feedbackState.phase === "save_route" && "Say Yes to save this route, or No."}
+            </p>
+          </div>
+          <button
+            onClick={cancelFeedback}
+            className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-accent"
+          >
+            Skip
+          </button>
+        </section>
+      )}
+
       {/* Quick Action Buttons */}
       <QuickActions
         onAction={handleVoiceCommand}
