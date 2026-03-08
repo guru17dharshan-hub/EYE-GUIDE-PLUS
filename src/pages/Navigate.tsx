@@ -50,6 +50,27 @@ const Navigate = () => {
   ]);
   const [voiceTranscripts, setVoiceTranscripts] = useState<string[]>([]);
 
+  // Fall detection
+  const handleFallDetected = useCallback(() => {
+    speak("Are you okay? Say I'm okay or I'm fine within 15 seconds, or I will contact your emergency contacts.", "high");
+    if (navigator.vibrate) navigator.vibrate([500, 300, 500, 300, 500]);
+  }, [speak]);
+
+  const handleFallConfirmed = useCallback(() => {
+    speak("No response detected. Activating emergency SOS.", "high");
+    // Will trigger SOS after the handleSOS is defined
+    if (contacts.length > 0) {
+      callAll();
+      speak(`Calling ${contacts[0].name} now.`, "high");
+    }
+  }, [speak, contacts, callAll]);
+
+  const { fallDetected, confirmSafe } = useFallDetection({
+    onFallDetected: handleFallDetected,
+    onFallConfirmed: handleFallConfirmed,
+    enabled: hapticEnabled, // Use haptic toggle as proxy for motion features
+  });
+
   const addAlert = useCallback(
     (message: string, vibrate = true, priority: "normal" | "high" = "normal") => {
       setAlerts((prev) => [message, ...prev].slice(0, 20));
