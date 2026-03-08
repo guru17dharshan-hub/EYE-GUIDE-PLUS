@@ -21,6 +21,7 @@ import ManagePanel from "@/components/ManagePanel";
 import { useTransitCardScanner } from "@/hooks/useTransitCardScanner";
 import { useFallDetection } from "@/hooks/useFallDetection";
 import { useTripFeedback } from "@/hooks/useTripFeedback";
+import { useEdgeCaseDetection } from "@/hooks/useEdgeCaseDetection";
 
 const Navigate = () => {
   const navigate = useNavigate();
