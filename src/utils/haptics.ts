@@ -75,4 +75,3 @@ export const getBoardingHaptic = (phase: string): number[] => {
       return [150];
   }
 };
-};
