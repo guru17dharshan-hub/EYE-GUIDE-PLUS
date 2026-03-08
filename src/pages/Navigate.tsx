@@ -15,6 +15,7 @@ import { useGeolocation } from "@/hooks/useGeolocation";
 import { useSavedLocations } from "@/hooks/useSavedLocations";
 import LocationMap from "@/components/LocationMap";
 import QuickActions from "@/components/QuickActions";
+import ManagePanel from "@/components/ManagePanel";
 
 const Navigate = () => {
   const navigate = useNavigate();
@@ -28,9 +29,10 @@ const Navigate = () => {
   const { buses } = useMockBusTracker(busTrackingActive);
   const { contacts, addContact, removeContact, callContact, callAll } = useEmergencyContacts();
   const { position, error: geoError } = useGeolocation(true);
-  const { locations, setHome, addLocation, getHome, getFrequent } = useSavedLocations();
+  const { locations, setHome, addLocation, removeLocation, getHome, getFrequent } = useSavedLocations();
   const [showMap, setShowMap] = useState(false);
   const [cameraExpanded, setCameraExpanded] = useState(false);
+  const [showManage, setShowManage] = useState(false);
   const autoScanRef = useRef(false);
   const cameraRef = useRef<CameraFeedRef>(null);
   const scanningRef = useRef(false);
@@ -476,6 +478,7 @@ const Navigate = () => {
         autoScan={autoScan}
         hapticEnabled={hapticEnabled}
         showMap={showMap}
+        onOpenManage={() => setShowManage(true)}
       />
 
       {/* Alert Log */}
@@ -497,6 +500,21 @@ const Navigate = () => {
           onRemove={removeContact}
           onCall={callContact}
           onClose={() => setShowContacts(false)}
+        />
+      )}
+
+      {showManage && (
+        <ManagePanel
+          contacts={contacts}
+          onAddContact={addContact}
+          onRemoveContact={removeContact}
+          onCallContact={callContact}
+          locations={locations}
+          onSetHome={setHome}
+          onAddLocation={addLocation}
+          onRemoveLocation={removeLocation}
+          position={position}
+          onClose={() => setShowManage(false)}
         />
       )}
     </main>

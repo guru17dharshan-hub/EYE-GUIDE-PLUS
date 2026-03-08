@@ -14,6 +14,7 @@ import {
   Vibrate,
   RefreshCw,
   HelpCircle,
+  Settings,
 } from "lucide-react";
 
 interface QuickActionsProps {
@@ -21,6 +22,7 @@ interface QuickActionsProps {
   autoScan: boolean;
   hapticEnabled: boolean;
   showMap: boolean;
+  onOpenManage?: () => void;
 }
 
 const actions = [
@@ -41,7 +43,7 @@ const actions = [
   { label: "Help", icon: HelpCircle, command: "help", color: "bg-muted" },
 ];
 
-const QuickActions = ({ onAction, autoScan, hapticEnabled, showMap }: QuickActionsProps) => {
+const QuickActions = ({ onAction, autoScan, hapticEnabled, showMap, onOpenManage }: QuickActionsProps) => {
   const toggleState: Record<string, boolean> = { autoScan, hapticEnabled, showMap };
 
   return (
@@ -76,6 +78,18 @@ const QuickActions = ({ onAction, autoScan, hapticEnabled, showMap }: QuickActio
             </button>
           );
         })}
+
+        {/* Manage button for manual entry */}
+        {onOpenManage && (
+          <button
+            onClick={onOpenManage}
+            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all active:scale-95 bg-secondary text-secondary-foreground hover:bg-secondary/80"
+            aria-label="Manage contacts and locations"
+          >
+            <Settings className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            Manage
+          </button>
+        )}
       </div>
     </section>
   );
