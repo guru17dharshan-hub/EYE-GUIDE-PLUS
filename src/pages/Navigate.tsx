@@ -26,6 +26,9 @@ const Navigate = () => {
   const autoScanRef = useRef(false);
   const cameraRef = useRef<CameraFeedRef>(null);
   const scanningRef = useRef(false);
+  // Voice contact addition state machine: "idle" | "awaiting_name" | "awaiting_phone"
+  const voiceContactModeRef = useRef<"idle" | "awaiting_name" | "awaiting_phone">("idle");
+  const pendingContactNameRef = useRef("");
   const [alerts, setAlerts] = useState<string[]>([
     "Navigation active. Voice control enabled.",
   ]);
@@ -144,10 +147,70 @@ const Navigate = () => {
     }
   }, [addAlert, contacts, callAll]);
 
+  // Helper to extract phone digits from spoken text
+  const extractPhoneFromSpeech = useCallback((speech: string): string => {
+    // Map spoken words to digits
+    const wordToDigit: Record<string, string> = {
+      zero: "0", oh: "0", one: "1", two: "2", to: "2", too: "2",
+      three: "3", four: "4", for: "4", five: "5", six: "6",
+      seven: "7", eight: "8", nine: "9",
+    };
+    // Replace spoken number words with digits
+    let processed = speech.toLowerCase();
+    Object.entries(wordToDigit).forEach(([word, digit]) => {
+      processed = processed.replace(new RegExp(`\\b${word}\\b`, "g"), digit);
+    });
+    // Also handle "double" and "triple"
+    processed = processed.replace(/double\s*(\d)/g, "$1$1");
+    processed = processed.replace(/triple\s*(\d)/g, "$1$1$1");
+    // Extract only digits and +
+    const digits = processed.replace(/[^\d+]/g, "");
+    return digits;
+  }, []);
+
   const handleVoiceCommand = useCallback(
     (command: string) => {
       const lower = command.toLowerCase();
 
+      // ---- Voice contact state machine ----
+      if (voiceContactModeRef.current === "awaiting_name") {
+        if (lower.includes("cancel") || lower.includes("never mind")) {
+          voiceContactModeRef.current = "idle";
+          addAlert("Contact addition cancelled.");
+          return;
+        }
+        const name = command.trim();
+        if (name.length < 1) {
+          addAlert("I didn't catch the name. Please say the contact name again.");
+          return;
+        }
+        pendingContactNameRef.current = name;
+        voiceContactModeRef.current = "awaiting_phone";
+        addAlert(`Got it, ${name}. Now say the phone number. For example, say 9 8 7 6 5 4 3 2 1 0.`);
+        return;
+      }
+
+      if (voiceContactModeRef.current === "awaiting_phone") {
+        if (lower.includes("cancel") || lower.includes("never mind")) {
+          voiceContactModeRef.current = "idle";
+          pendingContactNameRef.current = "";
+          addAlert("Contact addition cancelled.");
+          return;
+        }
+        const phone = extractPhoneFromSpeech(command);
+        if (phone.length < 5) {
+          addAlert("That doesn't seem like a valid phone number. Please say the digits again clearly.");
+          return;
+        }
+        const name = pendingContactNameRef.current;
+        addContact(name, phone);
+        voiceContactModeRef.current = "idle";
+        pendingContactNameRef.current = "";
+        addAlert(`Saved! ${name} with number ${phone.split("").join(" ")} is now your emergency contact. In an emergency, say SOS to call them.`);
+        return;
+      }
+
+      // ---- Regular commands ----
       // Navigation commands
       if (lower.includes("find") && lower.includes("bus")) {
         addAlert("Scanning for buses…");
@@ -180,16 +243,46 @@ const Navigate = () => {
       else if (lower.includes("emergency") || lower.includes("sos") || lower.includes("help me")) {
         handleSOS();
       }
-      // Contacts
-      else if (lower.includes("add contact") || lower.includes("save contact") || lower.includes("new contact")) {
-        setShowContacts(true);
-        addAlert("Opening contacts. You can add an emergency contact.");
-      } else if (lower.includes("manage contact") || lower.includes("show contact") || lower.includes("my contact")) {
-        setShowContacts(true);
-        addAlert("Showing your emergency contacts.");
-      } else if (lower.includes("close contact") || lower.includes("hide contact")) {
-        setShowContacts(false);
-        addAlert("Contacts closed.");
+      // Add contact by voice — start the flow
+      else if (lower.includes("add contact") || lower.includes("save contact") || lower.includes("new contact") || lower.includes("add number") || lower.includes("save number") || lower.includes("add phone")) {
+        voiceContactModeRef.current = "awaiting_name";
+        addAlert("Sure! Say the contact name. For example, say Mom, or Dad, or Doctor.");
+      }
+      // List saved contacts by voice
+      else if (lower.includes("my contact") || lower.includes("show contact") || lower.includes("list contact") || lower.includes("who is saved")) {
+        if (contacts.length === 0) {
+          addAlert("You have no emergency contacts saved. Say Add contact to save one.");
+        } else {
+          const list = contacts.map(c => `${c.name}, ${c.phone.split("").join(" ")}`).join(". ");
+          addAlert(`Your emergency contacts are: ${list}.`);
+        }
+      }
+      // Remove contact by voice
+      else if (lower.includes("remove contact") || lower.includes("delete contact")) {
+        if (contacts.length === 0) {
+          addAlert("You have no contacts to remove.");
+        } else {
+          // Remove the last added contact
+          const last = contacts[contacts.length - 1];
+          removeContact(last.id);
+          addAlert(`Removed ${last.name} from your emergency contacts.`);
+        }
+      }
+      // Call contact by voice
+      else if (lower.includes("call") && !lower.includes("help")) {
+        if (contacts.length === 0) {
+          addAlert("No emergency contacts saved. Say Add contact to save one.");
+        } else {
+          // Check if a name is mentioned
+          const match = contacts.find(c => lower.includes(c.name.toLowerCase()));
+          if (match) {
+            addAlert(`Calling ${match.name}…`);
+            callContact(match);
+          } else {
+            addAlert(`Calling ${contacts[0].name}…`);
+            callContact(contacts[0]);
+          }
+        }
       }
       // Bus info
       else if (lower.includes("bus") && (lower.includes("status") || lower.includes("nearby") || lower.includes("where"))) {
@@ -212,7 +305,7 @@ const Navigate = () => {
         addAlert(
           "Available commands: Scan, Find bus, Detect seat, Bus status, " +
           "Auto scan on, Auto scan off, Haptic on, Haptic off, " +
-          "Add contact, Show contacts, Emergency, SOS, Go home. " +
+          "Add contact, My contacts, Call, Remove contact, Emergency, SOS, Go home. " +
           "You can also ask me any question and I will answer."
         );
       }
@@ -221,7 +314,7 @@ const Navigate = () => {
         askAI(command);
       }
     },
-    [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI]
+    [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI, contacts, addContact, removeContact, callContact, extractPhoneFromSpeech]
   );
 
   // Auto-start continuous voice recognition
