@@ -347,6 +347,25 @@ const Navigate = () => {
       else if (lower.includes("emergency") || lower.includes("sos") || lower.includes("help me")) {
         handleSOS();
       }
+      // Fall detection confirmation
+      else if (fallDetected && (lower.includes("i'm okay") || lower.includes("i'm fine") || lower.includes("im okay") || lower.includes("im fine") || lower.includes("i am okay") || lower.includes("i am fine"))) {
+        confirmSafe();
+        addAlert("Glad you're okay! Fall alert cancelled.");
+      }
+      // Set destination stop
+      else if (lower.includes("my stop is") || lower.includes("destination is") || lower.includes("get off at") || lower.includes("exit at")) {
+        const stopName = command.replace(/my stop is|destination is|get off at|exit at/i, "").trim();
+        if (stopName.length > 1) {
+          setDestination(stopName);
+          addAlert(`Destination set to ${stopName}. I'll alert you when it's approaching.`);
+        } else {
+          addAlert("Please say the stop name. For example: My stop is Central Station.");
+        }
+      }
+      // Prepare to exit
+      else if (lower.includes("prepare to exit") || lower.includes("getting off") || lower.includes("next stop is mine")) {
+        addAlert("Preparing to exit. Move toward the door carefully. Hold the handrail.");
+      }
       // Add contact by voice — start the flow
       else if (lower.includes("add contact") || lower.includes("save contact") || lower.includes("new contact") || lower.includes("add number") || lower.includes("save number") || lower.includes("add phone")) {
         voiceContactModeRef.current = "awaiting_name";
