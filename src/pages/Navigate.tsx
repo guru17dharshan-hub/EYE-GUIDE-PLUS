@@ -409,7 +409,7 @@ const Navigate = () => {
 
       {/* Camera Feed - click to toggle size */}
       <section
-        className="flex items-start gap-3 p-3 bg-card border-b border-border cursor-pointer"
+        className={`relative flex items-start gap-3 p-3 bg-card border-b border-border cursor-pointer ${cameraExpanded ? "flex-col" : ""}`}
         aria-label="Camera feed — tap to enlarge"
         onClick={() => setCameraExpanded((prev) => !prev)}
       >
