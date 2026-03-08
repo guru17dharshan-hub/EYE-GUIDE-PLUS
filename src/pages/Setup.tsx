@@ -81,9 +81,13 @@ const Setup = () => {
   }, [step]);
 
   const finishSetup = useCallback(() => {
+    // Write setupComplete directly to localStorage BEFORE navigating
+    // to prevent any race condition with React state batching
+    const current = JSON.parse(localStorage.getItem("eyeguide_profile") || "{}");
+    localStorage.setItem("eyeguide_profile", JSON.stringify({ ...current, setupComplete: true }));
     completeSetup();
     speak("Setup complete. Starting navigation.", "high");
-    navigate("/");
+    navigate("/", { replace: true });
   }, [completeSetup, navigate, speak]);
 
   const handleVoice = useCallback(
