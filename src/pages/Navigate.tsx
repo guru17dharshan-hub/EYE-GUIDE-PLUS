@@ -501,6 +501,21 @@ const Navigate = () => {
           onClose={() => setShowContacts(false)}
         />
       )}
+
+      {showManage && (
+        <ManagePanel
+          contacts={contacts}
+          onAddContact={addContact}
+          onRemoveContact={removeContact}
+          onCallContact={callContact}
+          locations={locations}
+          onSetHome={setHome}
+          onAddLocation={addLocation}
+          onRemoveLocation={removeLocation}
+          position={position}
+          onClose={() => setShowManage(false)}
+        />
+      )}
     </main>
   );
 };
