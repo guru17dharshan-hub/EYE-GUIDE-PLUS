@@ -2,13 +2,16 @@ import { useState, useCallback, useRef, useEffect } from "react";
 
 export const useVoiceCommand = (
   onCommand: (command: string) => void,
-  autoStart = false
+  autoStart = false,
+  isSpeaking?: () => boolean
 ) => {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
   const shouldListenRef = useRef(autoStart);
   const onCommandRef = useRef(onCommand);
+  const isSpeakingRef = useRef(isSpeaking);
   onCommandRef.current = onCommand;
+  isSpeakingRef.current = isSpeaking;
 
   const startListening = useCallback(() => {
     const SpeechRecognition =
@@ -32,7 +35,6 @@ export const useVoiceCommand = (
 
     recognition.onend = () => {
       setIsListening(false);
-      // Auto-restart if we should keep listening
       if (shouldListenRef.current) {
         setTimeout(() => {
           try { recognition.start(); } catch {}
@@ -41,18 +43,23 @@ export const useVoiceCommand = (
     };
 
     recognition.onerror = (event: any) => {
-      // For "no-speech" or "aborted", just restart
       if (event.error === "no-speech" || event.error === "aborted") {
-        return; // onend will handle restart
+        return;
       }
       console.warn("Speech recognition error:", event.error);
       setIsListening(false);
     };
 
     recognition.onresult = (event: any) => {
-      // Get the latest result
       const last = event.results.length - 1;
       const transcript = event.results[last][0].transcript;
+
+      // Ignore mic input while the app is speaking (prevents echo/feedback loop)
+      if (isSpeakingRef.current?.()) {
+        console.log("Ignored mic input during speech:", transcript);
+        return;
+      }
+
       onCommandRef.current(transcript);
     };
 
@@ -69,7 +76,6 @@ export const useVoiceCommand = (
     setIsListening(false);
   }, []);
 
-  // Auto-start on mount if requested
   useEffect(() => {
     if (autoStart) {
       const timer = setTimeout(startListening, 1000);

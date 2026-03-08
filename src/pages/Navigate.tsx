@@ -20,7 +20,7 @@ import ManagePanel from "@/components/ManagePanel";
 
 const Navigate = () => {
   const navigate = useNavigate();
-  const { speak } = useSpeech();
+  const { speak, isSpeaking } = useSpeech();
   const [hapticEnabled, setHapticEnabled] = useState(true);
   const [aiScanning, setAiScanning] = useState(false);
   const [autoScan, setAutoScan] = useState(false);
@@ -46,9 +46,9 @@ const Navigate = () => {
   ]);
 
   const addAlert = useCallback(
-    (message: string, vibrate = true) => {
+    (message: string, vibrate = true, priority: "normal" | "high" = "normal") => {
       setAlerts((prev) => [message, ...prev].slice(0, 20));
-      speak(message);
+      speak(message, priority);
       if (vibrate && hapticEnabled && navigator.vibrate) {
         navigator.vibrate(200);
       }
@@ -57,7 +57,7 @@ const Navigate = () => {
   );
 
   const analyzeFrame = useCallback(async () => {
-    if (scanningRef.current) return;
+    if (scanningRef.current || aiThinking) return;
     const frame = cameraRef.current?.captureFrame();
     if (!frame) return;
 
@@ -117,7 +117,7 @@ const Navigate = () => {
         return;
       }
       if (data?.answer) {
-        addAlert(`🤖 ${data.answer}`);
+        addAlert(`🤖 ${data.answer}`, true, "high");
       }
     } catch (e) {
       console.error("Ask AI error:", e);
@@ -391,7 +391,7 @@ const Navigate = () => {
   );
 
   // Auto-start continuous voice recognition
-  const { isListening } = useVoiceCommand(handleVoiceCommand, true);
+  const { isListening } = useVoiceCommand(handleVoiceCommand, true, isSpeaking);
 
   useEffect(() => {
     const timer = setTimeout(() => {
