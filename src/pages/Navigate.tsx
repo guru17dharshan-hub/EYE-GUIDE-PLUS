@@ -186,6 +186,14 @@ const Navigate = () => {
         </div>
       </section>
 
+      {/* Bus Tracker */}
+      <section className="p-4 bg-card border-t border-border" aria-label="Nearby buses">
+        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">
+          🚌 Nearby Buses
+        </h2>
+        <BusTracker buses={buses} />
+      </section>
+
       {/* Alert Log */}
       <section className="p-4 bg-card border-t border-border" aria-label="Audio alerts">
         <AlertLog alerts={alerts} />
