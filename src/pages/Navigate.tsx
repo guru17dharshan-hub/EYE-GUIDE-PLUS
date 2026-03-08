@@ -266,9 +266,11 @@ const Navigate = () => {
           <span className="text-sm text-foreground" aria-live="polite">
             {aiScanning
               ? "🤖 AI analyzing frame…"
-              : isListening
-                ? "🎙️ Listening — say a command"
-                : "Camera active"}
+              : aiThinking
+                ? "🤖 AI thinking…"
+                : isListening
+                  ? "🎙️ Listening — say a command or ask anything"
+                  : "Camera active"}
           </span>
         </div>
       </section>
