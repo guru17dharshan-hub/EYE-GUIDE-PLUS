@@ -651,13 +651,32 @@ const Navigate = () => {
     setLang(language.voiceLang);
   }, [language.voiceLang, setLang]);
 
+  // Spoken confirmations for language auto-switch in each language
+  const LANG_SWITCH_CONFIRMATIONS: Record<string, string> = {
+    ta: "மொழி தமிழுக்கு மாற்றப்பட்டது",
+    hi: "भाषा हिन्दी में बदल दी गई",
+    te: "భాష తెలుగుకు మార్చబడింది",
+    kn: "ಭಾಷೆಯನ್ನು ಕನ್ನಡಕ್ಕೆ ಬದಲಾಯಿಸಲಾಗಿದೆ",
+    ml: "ഭാഷ മലയാളത്തിലേക്ക് മാറ്റി",
+    es: "Idioma cambiado a español",
+    fr: "Langue changée en français",
+    ar: "تم تغيير اللغة إلى العربية",
+    zh: "语言已切换为中文",
+    en: "Language switched to English",
+  };
+
   // Auto-detect language from raw transcript
+  const prevLangRef = useRef(language.shortCode);
   const handleTranscriptRaw = useCallback((transcript: string) => {
+    const before = prevLangRef.current;
     const detected = autoDetectAndSwitch(transcript);
-    if (detected.shortCode !== language.shortCode) {
-      addAlert(`🌐 Auto-detected: ${detected.name}`);
+    if (detected.shortCode !== before) {
+      prevLangRef.current = detected.shortCode;
+      const confirmation = LANG_SWITCH_CONFIRMATIONS[detected.shortCode] || `Language switched to ${detected.name}`;
+      speak(confirmation, "high", detected.voiceLang);
+      addAlert(`🌐 ${confirmation}`);
     }
-  }, [autoDetectAndSwitch, language.shortCode, addAlert]);
+  }, [autoDetectAndSwitch, addAlert, speak]);
 
   // Auto-start continuous voice recognition with selected language
   const { isListening } = useVoiceCommand(handleVoiceCommand, true, isSpeaking, language.code, handleTranscriptRaw);
