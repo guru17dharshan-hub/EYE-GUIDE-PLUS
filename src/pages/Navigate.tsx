@@ -20,7 +20,7 @@ import ManagePanel from "@/components/ManagePanel";
 
 const Navigate = () => {
   const navigate = useNavigate();
-  const { speak } = useSpeech();
+  const { speak, isSpeaking } = useSpeech();
   const [hapticEnabled, setHapticEnabled] = useState(true);
   const [aiScanning, setAiScanning] = useState(false);
   const [autoScan, setAutoScan] = useState(false);
