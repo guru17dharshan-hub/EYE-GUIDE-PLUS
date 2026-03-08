@@ -391,7 +391,7 @@ const Navigate = () => {
   );
 
   // Auto-start continuous voice recognition
-  const { isListening } = useVoiceCommand(handleVoiceCommand, true);
+  const { isListening } = useVoiceCommand(handleVoiceCommand, true, isSpeaking);
 
   useEffect(() => {
     const timer = setTimeout(() => {
