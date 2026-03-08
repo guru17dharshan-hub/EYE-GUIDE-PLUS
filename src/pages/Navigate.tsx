@@ -80,6 +80,29 @@ const Navigate = () => {
     }
   }, [addAlert, hapticEnabled]);
 
+  const askAI = useCallback(async (question: string) => {
+    setAiThinking(true);
+    addAlert("Let me think about that…", false);
+    try {
+      const { data, error } = await supabase.functions.invoke("ask-ai", {
+        body: { question },
+      });
+      if (error) {
+        console.error("Ask AI error:", error);
+        addAlert("Sorry, I could not get an answer right now.");
+        return;
+      }
+      if (data?.answer) {
+        addAlert(`🤖 ${data.answer}`);
+      }
+    } catch (e) {
+      console.error("Ask AI error:", e);
+      addAlert("Sorry, something went wrong with my answer.");
+    } finally {
+      setAiThinking(false);
+    }
+  }, [addAlert]);
+
   // Auto-scan loop
   useEffect(() => {
     autoScanRef.current = autoScan;
