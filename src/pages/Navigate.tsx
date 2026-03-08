@@ -632,8 +632,13 @@ const Navigate = () => {
     [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI, contacts, addContact, removeContact, callContact, extractPhoneFromSpeech, position, setHome, addLocation, getHome, getFrequent, locations, scanFromDataUrl, qrSupported, fallDetected, confirmSafe, setDestination, isFeedbackActive, processFeedbackInput, cancelFeedback, endTrip]
   );
 
-  // Auto-start continuous voice recognition
-  const { isListening } = useVoiceCommand(handleVoiceCommand, true, isSpeaking);
+  // Sync TTS language
+  useEffect(() => {
+    setLang(language.voiceLang);
+  }, [language.voiceLang, setLang]);
+
+  // Auto-start continuous voice recognition with selected language
+  const { isListening } = useVoiceCommand(handleVoiceCommand, true, isSpeaking, language.code);
 
   useEffect(() => {
     const timer = setTimeout(() => {
