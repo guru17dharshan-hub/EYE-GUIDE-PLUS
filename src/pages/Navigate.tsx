@@ -526,13 +526,17 @@ const Navigate = () => {
           navigate("/");
         }
       }
+      // Rate trip manually
+      else if (lower.includes("rate trip") || lower.includes("rate my trip") || lower.includes("trip feedback")) {
+        endTrip();
+      }
       // Help
       else if (lower.includes("help") || lower.includes("command") || lower.includes("what can")) {
         addAlert(
           "Available commands: Scan, Find bus, Detect seat, Bus status, Scan card, " +
           "Auto scan on, Auto scan off, Haptic on, Haptic off, " +
           "Add contact, My contacts, Call, Remove contact, Emergency, SOS, " +
-          "My stop is [name], Prepare to exit, I'm okay, " +
+          "My stop is [name], Prepare to exit, I'm okay, Rate trip, " +
           "Where am I, Show map, Save home, Save location, My places, Go home. " +
           "You can also ask me any question and I will answer."
         );
@@ -542,7 +546,7 @@ const Navigate = () => {
         askAI(command);
       }
     },
-    [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI, contacts, addContact, removeContact, callContact, extractPhoneFromSpeech, position, setHome, addLocation, getHome, getFrequent, locations, scanFromDataUrl, qrSupported, fallDetected, confirmSafe, setDestination]
+    [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI, contacts, addContact, removeContact, callContact, extractPhoneFromSpeech, position, setHome, addLocation, getHome, getFrequent, locations, scanFromDataUrl, qrSupported, fallDetected, confirmSafe, setDestination, isFeedbackActive, processFeedbackInput, cancelFeedback, endTrip]
   );
 
   // Auto-start continuous voice recognition
