@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { AlertTriangle, ArrowLeft, Camera, Eye, Vibrate, Volume2, VolumeX, Loader2, Phone } from "lucide-react";
+import { AlertTriangle, Camera, Eye, Loader2 } from "lucide-react";
 import { useSpeech } from "@/hooks/useSpeech";
 import { useVoiceCommand } from "@/hooks/useVoiceCommand";
 import CameraFeed, { CameraFeedRef } from "@/components/CameraFeed";
@@ -27,7 +26,7 @@ const Navigate = () => {
   const cameraRef = useRef<CameraFeedRef>(null);
   const scanningRef = useRef(false);
   const [alerts, setAlerts] = useState<string[]>([
-    "Navigation active. Scanning surroundings…",
+    "Navigation active. Voice control enabled.",
   ]);
 
   const addAlert = useCallback(
@@ -89,7 +88,7 @@ const Navigate = () => {
       if (autoScanRef.current && !scanningRef.current) {
         analyzeFrame();
       }
-    }, 8000); // every 8 seconds
+    }, 8000);
 
     return () => clearInterval(interval);
   }, [autoScan, analyzeFrame]);
@@ -117,33 +116,99 @@ const Navigate = () => {
       addAlert(`Calling ${contacts[0].name}…`);
       callAll();
     } else {
-      addAlert("No emergency contacts saved. Tap 'Manage Contacts' to add one.");
+      addAlert("No emergency contacts saved. Say Add contact to add one.");
     }
   }, [addAlert, contacts, callAll]);
 
   const handleVoiceCommand = useCallback(
     (command: string) => {
       const lower = command.toLowerCase();
+
+      // Navigation commands
       if (lower.includes("find") && lower.includes("bus")) {
         addAlert("Scanning for buses…");
         analyzeFrame();
       } else if (lower.includes("detect") && lower.includes("seat")) {
         addAlert("Scanning for available seats…");
         analyzeFrame();
-      } else if (lower.includes("emergency") || lower.includes("sos")) {
+      } else if (lower.includes("scan") || lower.includes("look") || lower.includes("what") && lower.includes("see")) {
+        addAlert("Scanning surroundings…");
+        analyzeFrame();
+      }
+      // Auto scan toggle
+      else if (lower.includes("auto scan on") || lower.includes("enable auto") || lower.includes("start auto")) {
+        setAutoScan(true);
+        addAlert("Auto scan enabled. I will scan every 8 seconds.");
+        analyzeFrame();
+      } else if (lower.includes("auto scan off") || lower.includes("disable auto") || lower.includes("stop auto")) {
+        setAutoScan(false);
+        addAlert("Auto scan disabled.");
+      }
+      // Haptic toggle
+      else if (lower.includes("haptic on") || lower.includes("vibration on")) {
+        setHapticEnabled(true);
+        addAlert("Haptic feedback enabled.");
+      } else if (lower.includes("haptic off") || lower.includes("vibration off")) {
+        setHapticEnabled(false);
+        addAlert("Haptic feedback disabled.");
+      }
+      // Emergency
+      else if (lower.includes("emergency") || lower.includes("sos") || lower.includes("help me")) {
         handleSOS();
-      } else if (lower.includes("stop")) {
-        addAlert("Stopping navigation.");
+      }
+      // Contacts
+      else if (lower.includes("add contact") || lower.includes("save contact") || lower.includes("new contact")) {
+        setShowContacts(true);
+        addAlert("Opening contacts. You can add an emergency contact.");
+      } else if (lower.includes("manage contact") || lower.includes("show contact") || lower.includes("my contact")) {
+        setShowContacts(true);
+        addAlert("Showing your emergency contacts.");
+      } else if (lower.includes("close contact") || lower.includes("hide contact")) {
+        setShowContacts(false);
+        addAlert("Contacts closed.");
+      }
+      // Bus info
+      else if (lower.includes("bus") && (lower.includes("status") || lower.includes("nearby") || lower.includes("where"))) {
+        if (buses.length === 0) {
+          addAlert("No buses detected nearby.");
+        } else {
+          const busInfo = buses.map(b =>
+            `Bus ${b.routeNumber} to ${b.destination}, ${b.etaMinutes} minutes away, ${b.status}`
+          ).join(". ");
+          addAlert(`Nearby buses: ${busInfo}`);
+        }
+      }
+      // Go home
+      else if (lower.includes("stop") || lower.includes("go home") || lower.includes("go back") || lower.includes("exit")) {
+        addAlert("Stopping navigation. Going home.");
         navigate("/");
       }
+      // Help
+      else if (lower.includes("help") || lower.includes("command") || lower.includes("what can")) {
+        addAlert(
+          "Available commands: Scan, Find bus, Detect seat, Bus status, " +
+          "Auto scan on, Auto scan off, Haptic on, Haptic off, " +
+          "Add contact, Show contacts, Emergency, SOS, Go home, Help."
+        );
+      }
+      // Fallback — read back what was heard
+      else {
+        addAlert(`I heard: ${command}. Say Help for available commands.`);
+      }
     },
-    [addAlert, handleSOS, navigate, analyzeFrame]
+    [addAlert, handleSOS, navigate, analyzeFrame, buses]
   );
 
-  const { isListening, startListening } = useVoiceCommand(handleVoiceCommand);
+  // Auto-start continuous voice recognition
+  const { isListening } = useVoiceCommand(handleVoiceCommand, true);
 
   useEffect(() => {
-    speak("Navigation mode active. Point your camera ahead.");
+    const timer = setTimeout(() => {
+      speak(
+        "Navigation mode active. Voice control is on. Point your camera ahead. Say Help for available commands."
+      );
+    }, 500);
+    return () => clearTimeout(timer);
   }, [speak]);
 
   return (
@@ -154,27 +219,15 @@ const Navigate = () => {
     >
       {/* Header */}
       <header className="flex items-center justify-between p-4 border-b border-border bg-card">
-        <Button
-          variant="ghost"
-          size="default"
-          onClick={() => navigate("/")}
-          aria-label="Go back to home"
-          className="focus-ring text-foreground"
-        >
-          <ArrowLeft className="h-6 w-6" />
-        </Button>
         <h1 className="text-xl font-bold text-foreground">
           EyeGuide<span className="text-primary">+</span>
         </h1>
-        <Button
-          variant="ghost"
-          size="default"
-          onClick={startListening}
-          aria-label={isListening ? "Listening" : "Activate voice command"}
-          className="focus-ring"
-        >
-          <Volume2 className={`h-6 w-6 ${isListening ? "text-primary animate-pulse" : "text-foreground"}`} />
-        </Button>
+        <div className="flex items-center gap-2 text-primary" aria-live="polite">
+          <div className={`h-3 w-3 rounded-full ${isListening ? "bg-primary animate-pulse" : "bg-muted-foreground"}`} />
+          <span className="text-sm font-medium">
+            {isListening ? "Listening" : "Voice off"}
+          </span>
+        </div>
       </header>
 
       {/* Camera Feed */}
@@ -190,8 +243,8 @@ const Navigate = () => {
             {aiScanning
               ? "🤖 AI analyzing frame…"
               : isListening
-                ? "🎙️ Listening for commands…"
-                : "Camera active — scanning"}
+                ? "🎙️ Listening — say a command"
+                : "Camera active"}
           </span>
         </div>
       </section>
@@ -209,98 +262,11 @@ const Navigate = () => {
         <AlertLog alerts={alerts} />
       </section>
 
-      {/* Controls */}
-      <footer className="p-4 bg-background border-t border-border space-y-3">
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            size="lg"
-            className="flex-1 focus-ring"
-            onClick={() => {
-              setHapticEnabled(!hapticEnabled);
-              speak(hapticEnabled ? "Haptic feedback off" : "Haptic feedback on");
-            }}
-            aria-label={`Haptic feedback ${hapticEnabled ? "enabled" : "disabled"}`}
-            aria-pressed={hapticEnabled}
-          >
-            <Vibrate className={`h-5 w-5 mr-2 ${hapticEnabled ? "text-primary" : "text-muted-foreground"}`} aria-hidden="true" />
-            {hapticEnabled ? "Haptic On" : "Haptic Off"}
-          </Button>
-
-          <Button
-            variant={autoScan ? "nav" : "outline"}
-            size="lg"
-            className="flex-1 focus-ring"
-            onClick={() => {
-              const next = !autoScan;
-              setAutoScan(next);
-              speak(next ? "Auto scan enabled" : "Auto scan disabled");
-              if (next) analyzeFrame();
-            }}
-            aria-label={autoScan ? "Auto scan enabled" : "Auto scan disabled"}
-            aria-pressed={autoScan}
-          >
-            <Eye className={`h-5 w-5 mr-2 ${autoScan ? "" : "text-muted-foreground"}`} aria-hidden="true" />
-            {autoScan ? "AI On" : "AI Off"}
-          </Button>
-        </div>
-
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            size="lg"
-            className="flex-1 focus-ring"
-            onClick={() => {
-              analyzeFrame();
-            }}
-            disabled={aiScanning}
-            aria-label="Scan now with AI"
-          >
-            {aiScanning ? (
-              <Loader2 className="h-5 w-5 mr-2 animate-spin" aria-hidden="true" />
-            ) : (
-              <Eye className="h-5 w-5 mr-2 text-accent" aria-hidden="true" />
-            )}
-            {aiScanning ? "Scanning…" : "Scan Now"}
-          </Button>
-
-          <Button
-            variant="outline"
-            size="lg"
-            className="flex-1 focus-ring"
-            onClick={startListening}
-            aria-label="Activate voice command"
-          >
-            {isListening ? (
-              <VolumeX className="h-5 w-5 mr-2 text-primary animate-pulse" aria-hidden="true" />
-            ) : (
-              <Volume2 className="h-5 w-5 mr-2" aria-hidden="true" />
-            )}
-            {isListening ? "Listening…" : "Voice"}
-          </Button>
-        </div>
-
-        <Button
-          variant="sos"
-          size="xl"
-          className="w-full focus-ring"
-          onClick={handleSOS}
-          aria-label="Emergency SOS. Double tap to activate."
-        >
-          <AlertTriangle className="h-8 w-8 mr-2" aria-hidden="true" />
-          EMERGENCY SOS
-        </Button>
-
-        <Button
-          variant="outline"
-          size="lg"
-          className="w-full focus-ring"
-          onClick={() => setShowContacts(true)}
-          aria-label="Manage emergency contacts"
-        >
-          <Phone className="h-5 w-5 mr-2 text-destructive" aria-hidden="true" />
-          Manage Contacts {contacts.length > 0 && `(${contacts.length})`}
-        </Button>
+      {/* Minimal status footer */}
+      <footer className="p-3 bg-background border-t border-border text-center" aria-live="polite">
+        <p className="text-xs text-muted-foreground">
+          🎙️ Voice-only mode — Say "Help" for commands • {autoScan ? "Auto-scan ON" : "Auto-scan OFF"} • Haptic {hapticEnabled ? "ON" : "OFF"}
+        </p>
       </footer>
 
       {showContacts && (
