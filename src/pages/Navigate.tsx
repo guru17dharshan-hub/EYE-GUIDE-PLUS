@@ -44,6 +44,7 @@ const Navigate = () => {
   const [alerts, setAlerts] = useState<string[]>([
     "Navigation active. Voice control enabled.",
   ]);
+  const [voiceTranscripts, setVoiceTranscripts] = useState<string[]>([]);
 
   const addAlert = useCallback(
     (message: string, vibrate = true, priority: "normal" | "high" = "normal") => {
@@ -196,6 +197,7 @@ const Navigate = () => {
   const handleVoiceCommand = useCallback(
     (command: string) => {
       const lower = command.toLowerCase();
+      setVoiceTranscripts((prev) => [`🎙️ ${command}`, ...prev].slice(0, 10));
 
       // ---- Voice contact state machine ----
       if (voiceContactModeRef.current === "awaiting_name") {
@@ -527,6 +529,16 @@ const Navigate = () => {
         showMap={showMap}
         onOpenManage={() => setShowManage(true)}
       />
+
+      {/* Voice Transcript Box */}
+      {voiceTranscripts.length > 0 && (
+        <section className="mx-4 mb-2 p-3 bg-muted/50 border border-border rounded-lg max-h-28 overflow-y-auto" aria-label="Voice transcripts">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Voice Input</p>
+          {voiceTranscripts.map((t, i) => (
+            <p key={i} className={`text-xs ${i === 0 ? "text-foreground font-medium" : "text-muted-foreground"}`}>{t}</p>
+          ))}
+        </section>
+      )}
 
       {/* Alert Log */}
       <section className="p-4 bg-card border-t border-border" aria-label="Audio alerts">
