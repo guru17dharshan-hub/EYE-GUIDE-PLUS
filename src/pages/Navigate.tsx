@@ -19,6 +19,7 @@ import LocationMap from "@/components/LocationMap";
 import QuickActions from "@/components/QuickActions";
 import ManagePanel from "@/components/ManagePanel";
 import { useTransitCardScanner } from "@/hooks/useTransitCardScanner";
+import { useFallDetection } from "@/hooks/useFallDetection";
 
 const Navigate = () => {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ const Navigate = () => {
   const [aiThinking, setAiThinking] = useState(false);
   const { buses } = useMockBusTracker(busTrackingActive);
   const { contacts, addContact, removeContact, callContact, callAll } = useEmergencyContacts();
-  const { boardingState, processDetection, getPromptContext, reset: resetBoarding, isBoarding } = useBusBoarding(speak, hapticEnabled);
+  const { boardingState, processDetection, getPromptContext, reset: resetBoarding, isBoarding, setDestination } = useBusBoarding(speak, hapticEnabled);
   const { position, error: geoError } = useGeolocation(true);
   const { locations, setHome, addLocation, removeLocation, getHome, getFrequent } = useSavedLocations();
   const [showMap, setShowMap] = useState(false);
@@ -48,6 +49,27 @@ const Navigate = () => {
     "Navigation active. Voice control enabled.",
   ]);
   const [voiceTranscripts, setVoiceTranscripts] = useState<string[]>([]);
+
+  // Fall detection
+  const handleFallDetected = useCallback(() => {
+    speak("Are you okay? Say I'm okay or I'm fine within 15 seconds, or I will contact your emergency contacts.", "high");
+    if (navigator.vibrate) navigator.vibrate([500, 300, 500, 300, 500]);
+  }, [speak]);
+
+  const handleFallConfirmed = useCallback(() => {
+    speak("No response detected. Activating emergency SOS.", "high");
+    // Will trigger SOS after the handleSOS is defined
+    if (contacts.length > 0) {
+      callAll();
+      speak(`Calling ${contacts[0].name} now.`, "high");
+    }
+  }, [speak, contacts, callAll]);
+
+  const { fallDetected, confirmSafe } = useFallDetection({
+    onFallDetected: handleFallDetected,
+    onFallConfirmed: handleFallConfirmed,
+    enabled: hapticEnabled, // Use haptic toggle as proxy for motion features
+  });
 
   const addAlert = useCallback(
     (message: string, vibrate = true, priority: "normal" | "high" = "normal") => {
@@ -325,6 +347,25 @@ const Navigate = () => {
       else if (lower.includes("emergency") || lower.includes("sos") || lower.includes("help me")) {
         handleSOS();
       }
+      // Fall detection confirmation
+      else if (fallDetected && (lower.includes("i'm okay") || lower.includes("i'm fine") || lower.includes("im okay") || lower.includes("im fine") || lower.includes("i am okay") || lower.includes("i am fine"))) {
+        confirmSafe();
+        addAlert("Glad you're okay! Fall alert cancelled.");
+      }
+      // Set destination stop
+      else if (lower.includes("my stop is") || lower.includes("destination is") || lower.includes("get off at") || lower.includes("exit at")) {
+        const stopName = command.replace(/my stop is|destination is|get off at|exit at/i, "").trim();
+        if (stopName.length > 1) {
+          setDestination(stopName);
+          addAlert(`Destination set to ${stopName}. I'll alert you when it's approaching.`);
+        } else {
+          addAlert("Please say the stop name. For example: My stop is Central Station.");
+        }
+      }
+      // Prepare to exit
+      else if (lower.includes("prepare to exit") || lower.includes("getting off") || lower.includes("next stop is mine")) {
+        addAlert("Preparing to exit. Move toward the door carefully. Hold the handrail.");
+      }
       // Add contact by voice — start the flow
       else if (lower.includes("add contact") || lower.includes("save contact") || lower.includes("new contact") || lower.includes("add number") || lower.includes("save number") || lower.includes("add phone")) {
         voiceContactModeRef.current = "awaiting_name";
@@ -438,6 +479,7 @@ const Navigate = () => {
           "Available commands: Scan, Find bus, Detect seat, Bus status, Scan card, " +
           "Auto scan on, Auto scan off, Haptic on, Haptic off, " +
           "Add contact, My contacts, Call, Remove contact, Emergency, SOS, " +
+          "My stop is [name], Prepare to exit, I'm okay, " +
           "Where am I, Show map, Save home, Save location, My places, Go home. " +
           "You can also ask me any question and I will answer."
         );
@@ -447,7 +489,7 @@ const Navigate = () => {
         askAI(command);
       }
     },
-    [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI, contacts, addContact, removeContact, callContact, extractPhoneFromSpeech, position, setHome, addLocation, getHome, getFrequent, locations, scanFromDataUrl, qrSupported]
+    [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI, contacts, addContact, removeContact, callContact, extractPhoneFromSpeech, position, setHome, addLocation, getHome, getFrequent, locations, scanFromDataUrl, qrSupported, fallDetected, confirmSafe, setDestination]
   );
 
   // Auto-start continuous voice recognition
@@ -542,9 +584,13 @@ const Navigate = () => {
           className={`px-4 py-3 border-t border-border flex flex-col gap-2 ${
             boardingState.phase === "seated"
               ? "bg-green-500/10 border-green-500/30"
-              : boardingState.phase === "boarding"
-                ? "bg-orange-500/10 border-orange-500/30"
-                : "bg-primary/10 border-primary/30"
+              : boardingState.phase === "exiting"
+                ? "bg-red-500/10 border-red-500/30"
+                : boardingState.phase === "post_exit"
+                  ? "bg-blue-500/10 border-blue-500/30"
+                  : boardingState.phase === "boarding"
+                    ? "bg-orange-500/10 border-orange-500/30"
+                    : "bg-primary/10 border-primary/30"
           }`}
           aria-live="assertive"
           aria-label="Bus boarding assistance"
@@ -552,17 +598,19 @@ const Navigate = () => {
           <div className="flex items-center gap-3">
             <div className={`h-3 w-3 rounded-full shrink-0 animate-pulse ${
               boardingState.phase === "seated" ? "bg-green-500"
+                : boardingState.phase === "exiting" ? "bg-red-500"
+                : boardingState.phase === "post_exit" ? "bg-blue-500"
                 : boardingState.phase === "boarding" ? "bg-orange-500"
                 : "bg-primary"
             }`} />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-foreground">
-                🚌 Boarding Assistant — {boardingState.phase.replace("_", " ").toUpperCase()}
+                {boardingState.phase === "post_exit" ? "🚶" : "🚌"} {boardingState.phase === "post_exit" ? "Outdoor Navigation" : "Boarding Assistant"} — {boardingState.phase.replace("_", " ").toUpperCase()}
                 {boardingState.busRoute && ` (Route ${boardingState.busRoute})`}
               </p>
               <p className="text-xs text-muted-foreground">{boardingState.instructions}</p>
             </div>
-            {boardingState.phase === "seated" && (
+            {(boardingState.phase === "seated" || boardingState.phase === "post_exit") && (
               <button
                 onClick={() => resetBoarding()}
                 className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-accent"
@@ -571,18 +619,44 @@ const Navigate = () => {
               </button>
             )}
           </div>
-          {/* Seat direction info */}
           {boardingState.phase === "finding_seat" && boardingState.lastSeatDirection && (
             <p className="text-xs text-primary font-medium ml-6">
               💺 Seat spotted: {boardingState.lastSeatDirection}
             </p>
           )}
-          {/* Next stop info */}
           {boardingState.phase === "seated" && boardingState.nextStop && (
             <p className="text-xs text-foreground font-medium ml-6">
               📍 Next stop: {boardingState.nextStop}
+              {boardingState.isApproachingDestination && (
+                <span className="text-red-500 font-bold animate-pulse ml-2">⚠️ YOUR STOP IS NEXT!</span>
+              )}
             </p>
           )}
+          {boardingState.phase === "seated" && boardingState.destinationStop && (
+            <p className="text-xs text-muted-foreground ml-6">
+              🎯 Destination: {boardingState.destinationStop}
+            </p>
+          )}
+        </section>
+      )}
+
+      {/* Fall Detection Alert */}
+      {fallDetected && (
+        <section
+          className="px-4 py-3 border-t border-destructive bg-destructive/15 flex items-center gap-3"
+          aria-live="assertive"
+        >
+          <AlertTriangle className="h-5 w-5 text-destructive shrink-0 animate-pulse" />
+          <div className="flex-1">
+            <p className="text-sm font-bold text-destructive">Fall Detected!</p>
+            <p className="text-xs text-muted-foreground">Say "I'm okay" or tap below to cancel the alert.</p>
+          </div>
+          <button
+            onClick={() => { confirmSafe(); addAlert("Fall alert cancelled. Glad you're okay!"); }}
+            className="text-xs px-3 py-1.5 rounded-lg bg-destructive text-destructive-foreground font-semibold"
+          >
+            I'm Okay
+          </button>
         </section>
       )}
 
