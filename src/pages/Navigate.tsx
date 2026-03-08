@@ -479,6 +479,7 @@ const Navigate = () => {
           "Available commands: Scan, Find bus, Detect seat, Bus status, Scan card, " +
           "Auto scan on, Auto scan off, Haptic on, Haptic off, " +
           "Add contact, My contacts, Call, Remove contact, Emergency, SOS, " +
+          "My stop is [name], Prepare to exit, I'm okay, " +
           "Where am I, Show map, Save home, Save location, My places, Go home. " +
           "You can also ask me any question and I will answer."
         );
