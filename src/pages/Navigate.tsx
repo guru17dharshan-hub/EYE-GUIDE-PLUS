@@ -44,6 +44,7 @@ const Navigate = () => {
   const [alerts, setAlerts] = useState<string[]>([
     "Navigation active. Voice control enabled.",
   ]);
+  const [voiceTranscripts, setVoiceTranscripts] = useState<string[]>([]);
 
   const addAlert = useCallback(
     (message: string, vibrate = true, priority: "normal" | "high" = "normal") => {
