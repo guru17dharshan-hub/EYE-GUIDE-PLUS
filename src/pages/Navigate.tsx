@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, Camera, Eye, Loader2, MapPin } from "lucide-react";
+import { AlertTriangle, Camera, Eye, Loader2, MapPin, QrCode } from "lucide-react";
+import { getProximityVibration, startProximityPulse } from "@/utils/haptics";
 import { useSpeech } from "@/hooks/useSpeech";
 import { useVoiceCommand } from "@/hooks/useVoiceCommand";
 import CameraFeed, { CameraFeedRef } from "@/components/CameraFeed";
