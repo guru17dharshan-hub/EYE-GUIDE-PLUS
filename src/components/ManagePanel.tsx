@@ -32,6 +32,9 @@ const ManagePanel = ({
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [locName, setLocName] = useState("");
+  const [manualLat, setManualLat] = useState("");
+  const [manualLng, setManualLng] = useState("");
+  const [useManualCoords, setUseManualCoords] = useState(false);
 
   const handleAddContact = () => {
     if (!name.trim() || !phone.trim()) return;
@@ -41,15 +44,40 @@ const ManagePanel = ({
   };
 
   const handleSaveCurrentLocation = () => {
-    if (!position || !locName.trim()) return;
-    onAddLocation(locName, position.lat, position.lng);
-    setLocName("");
+    if (useManualCoords) {
+      const lat = parseFloat(manualLat);
+      const lng = parseFloat(manualLng);
+      if (!locName.trim() || isNaN(lat) || isNaN(lng)) return;
+      onAddLocation(locName, lat, lng);
+      setLocName("");
+      setManualLat("");
+      setManualLng("");
+    } else {
+      if (!position || !locName.trim()) return;
+      onAddLocation(locName, position.lat, position.lng);
+      setLocName("");
+    }
   };
 
   const handleSaveAsHome = () => {
-    if (!position) return;
-    onSetHome(position.lat, position.lng);
+    if (useManualCoords) {
+      const lat = parseFloat(manualLat);
+      const lng = parseFloat(manualLng);
+      if (isNaN(lat) || isNaN(lng)) return;
+      onSetHome(lat, lng);
+    } else {
+      if (!position) return;
+      onSetHome(position.lat, position.lng);
+    }
   };
+
+  const canSaveLocation = useManualCoords
+    ? locName.trim() && !isNaN(parseFloat(manualLat)) && !isNaN(parseFloat(manualLng))
+    : position && locName.trim();
+
+  const canSaveHome = useManualCoords
+    ? !isNaN(parseFloat(manualLat)) && !isNaN(parseFloat(manualLng))
+    : !!position;
 
   return (
     <div
