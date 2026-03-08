@@ -31,7 +31,9 @@ const ManagePanel = ({
   locations, onSetHome, onAddLocation, onRemoveLocation,
   position, onClose,
 }: ManagePanelProps) => {
-  const [tab, setTab] = useState<"contacts" | "locations" | "knowledge">("contacts");
+  const navigate = useNavigate();
+  const [tab, setTab] = useState<"contacts" | "locations" | "knowledge" | "profile">("contacts");
+  const [userProfile] = useState<UserProfile>(getStoredProfile);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [locName, setLocName] = useState("");
