@@ -3,33 +3,32 @@ import { useState, useCallback, useRef, useEffect } from "react";
 export const useVoiceCommand = (
   onCommand: (command: string) => void,
   autoStart = false,
-  isSpeaking?: () => boolean
+  isSpeaking?: () => boolean,
+  recognitionLang = "en-US"
 ) => {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
   const shouldListenRef = useRef(autoStart);
   const onCommandRef = useRef(onCommand);
   const isSpeakingRef = useRef(isSpeaking);
+  const langRef = useRef(recognitionLang);
   onCommandRef.current = onCommand;
   isSpeakingRef.current = isSpeaking;
+  langRef.current = recognitionLang;
 
-  const startListening = useCallback(() => {
+  const createRecognition = useCallback(() => {
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
       console.warn("Speech Recognition not supported");
-      return;
-    }
-
-    if (recognitionRef.current) {
-      try { recognitionRef.current.abort(); } catch {}
+      return null;
     }
 
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = false;
-    recognition.lang = "en-US";
+    recognition.lang = langRef.current;
 
     recognition.onstart = () => setIsListening(true);
 
@@ -37,7 +36,14 @@ export const useVoiceCommand = (
       setIsListening(false);
       if (shouldListenRef.current) {
         setTimeout(() => {
-          try { recognition.start(); } catch {}
+          try {
+            // Recreate with latest lang
+            const r = createRecognition();
+            if (r) {
+              recognitionRef.current = r;
+              r.start();
+            }
+          } catch {}
         }, 300);
       }
     };
@@ -54,7 +60,6 @@ export const useVoiceCommand = (
       const last = event.results.length - 1;
       const transcript = event.results[last][0].transcript;
 
-      // Ignore mic input while the app is speaking (prevents echo/feedback loop)
       if (isSpeakingRef.current?.()) {
         console.log("Ignored mic input during speech:", transcript);
         return;
@@ -63,10 +68,21 @@ export const useVoiceCommand = (
       onCommandRef.current(transcript);
     };
 
+    return recognition;
+  }, []);
+
+  const startListening = useCallback(() => {
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch {}
+    }
+
+    const recognition = createRecognition();
+    if (!recognition) return;
+
     recognitionRef.current = recognition;
     shouldListenRef.current = true;
     try { recognition.start(); } catch {}
-  }, []);
+  }, [createRecognition]);
 
   const stopListening = useCallback(() => {
     shouldListenRef.current = false;
@@ -75,6 +91,14 @@ export const useVoiceCommand = (
     }
     setIsListening(false);
   }, []);
+
+  // Restart recognition when language changes
+  useEffect(() => {
+    if (shouldListenRef.current && recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch {}
+      // Will auto-restart via onend handler with new lang
+    }
+  }, [recognitionLang]);
 
   useEffect(() => {
     if (autoStart) {

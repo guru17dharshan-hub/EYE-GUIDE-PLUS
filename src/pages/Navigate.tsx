@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, Camera, Eye, Loader2, MapPin, QrCode } from "lucide-react";
+import { AlertTriangle, Camera, Eye, Globe, Loader2, MapPin, QrCode } from "lucide-react";
 import { getProximityVibration, startProximityPulse } from "@/utils/haptics";
 import { useSpeech } from "@/hooks/useSpeech";
 import { useVoiceCommand } from "@/hooks/useVoiceCommand";
@@ -22,10 +22,13 @@ import { useTransitCardScanner } from "@/hooks/useTransitCardScanner";
 import { useFallDetection } from "@/hooks/useFallDetection";
 import { useTripFeedback } from "@/hooks/useTripFeedback";
 import { useEdgeCaseDetection } from "@/hooks/useEdgeCaseDetection";
+import { useLanguage, SUPPORTED_LANGUAGES } from "@/hooks/useLanguage";
 
 const Navigate = () => {
   const navigate = useNavigate();
-  const { speak, isSpeaking } = useSpeech();
+  const { speak, isSpeaking, setLang } = useSpeech();
+  const { language, setLanguage, languages } = useLanguage();
+  const [showLangPicker, setShowLangPicker] = useState(false);
   const [hapticEnabled, setHapticEnabled] = useState(true);
   const [aiScanning, setAiScanning] = useState(false);
   const [autoScan, setAutoScan] = useState(false);
@@ -225,7 +228,7 @@ const Navigate = () => {
     addAlert("Let me think about that…", false);
     try {
       const { data, error } = await supabase.functions.invoke("ask-ai", {
-        body: { question },
+        body: { question, language: language.shortCode },
       });
       if (error) {
         console.error("Ask AI error:", error);
@@ -241,7 +244,7 @@ const Navigate = () => {
     } finally {
       setAiThinking(false);
     }
-  }, [addAlert]);
+  }, [addAlert, language.shortCode]);
 
   // Auto-scan loop — uses boarding state interval when boarding is active
   useEffect(() => {
@@ -621,16 +624,35 @@ const Navigate = () => {
           "You can also ask me any question and I will answer."
         );
       }
+      // Language switching
+      else if (lower.includes("switch to") || lower.includes("change language") || lower.includes("speak in")) {
+        const matchedLang = languages.find(l =>
+          lower.includes(l.name.toLowerCase().split(" ")[0]) ||
+          lower.includes(l.shortCode)
+        );
+        if (matchedLang) {
+          setLanguage(matchedLang);
+          speak(`Language changed to ${matchedLang.name}`, "high", matchedLang.voiceLang);
+          addAlert(`🌐 Language: ${matchedLang.name}`);
+        } else {
+          addAlert("Available languages: English, Tamil, Hindi, Telugu, Kannada, Malayalam, Spanish, French, Arabic, Chinese. Say Switch to Tamil, for example.");
+        }
+      }
       // Fallback — treat as a question for AI
       else {
         askAI(command);
       }
     },
-    [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI, contacts, addContact, removeContact, callContact, extractPhoneFromSpeech, position, setHome, addLocation, getHome, getFrequent, locations, scanFromDataUrl, qrSupported, fallDetected, confirmSafe, setDestination, isFeedbackActive, processFeedbackInput, cancelFeedback, endTrip]
+    [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI, contacts, addContact, removeContact, callContact, extractPhoneFromSpeech, position, setHome, addLocation, getHome, getFrequent, locations, scanFromDataUrl, qrSupported, fallDetected, confirmSafe, setDestination, isFeedbackActive, processFeedbackInput, cancelFeedback, endTrip, languages, setLanguage, speak]
   );
 
-  // Auto-start continuous voice recognition
-  const { isListening } = useVoiceCommand(handleVoiceCommand, true, isSpeaking);
+  // Sync TTS language
+  useEffect(() => {
+    setLang(language.voiceLang);
+  }, [language.voiceLang, setLang]);
+
+  // Auto-start continuous voice recognition with selected language
+  const { isListening } = useVoiceCommand(handleVoiceCommand, true, isSpeaking, language.code);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -654,11 +676,44 @@ const Navigate = () => {
         <h1 className="text-xl font-bold text-foreground">
           EyeGuide<span className="text-primary">+</span>
         </h1>
-        <div className="flex items-center gap-2 text-primary" aria-live="polite">
-          <div className={`h-3 w-3 rounded-full ${isListening ? "bg-primary animate-pulse" : "bg-muted-foreground"}`} />
-          <span className="text-sm font-medium">
-            {isListening ? "Listening" : "Voice off"}
-          </span>
+        <div className="flex items-center gap-3">
+          {/* Language Picker */}
+          <div className="relative">
+            <button
+              onClick={() => setShowLangPicker(prev => !prev)}
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              aria-label={`Language: ${language.name}. Tap to change.`}
+            >
+              <Globe className="h-3.5 w-3.5" />
+              {language.shortCode.toUpperCase()}
+            </button>
+            {showLangPicker && (
+              <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[180px] max-h-[300px] overflow-y-auto">
+                {languages.map((lang) => (
+                  <button
+                    key={lang.code}
+                    onClick={() => {
+                      setLanguage(lang);
+                      setShowLangPicker(false);
+                      speak(`Language changed to ${lang.name}`, "high", lang.voiceLang);
+                      addAlert(`🌐 Language: ${lang.name}`);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors ${
+                      lang.code === language.code ? "text-primary font-semibold bg-primary/5" : "text-foreground"
+                    }`}
+                  >
+                    {lang.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-primary" aria-live="polite">
+            <div className={`h-3 w-3 rounded-full ${isListening ? "bg-primary animate-pulse" : "bg-muted-foreground"}`} />
+            <span className="text-sm font-medium">
+              {isListening ? "Listening" : "Voice off"}
+            </span>
+          </div>
         </div>
       </header>
 
@@ -917,7 +972,7 @@ const Navigate = () => {
       {/* Minimal status footer */}
       <footer className="p-3 bg-background border-t border-border text-center" aria-live="polite">
         <p className="text-xs text-muted-foreground">
-          🎙️ Voice-only mode — Ask anything or say "Help" • {autoScan ? "Auto-scan ON" : "Auto-scan OFF"} • Haptic {hapticEnabled ? "ON" : "OFF"}
+          🎙️ Voice-only mode — {language.name} • Ask anything or say "Help" • {autoScan ? "Auto-scan ON" : "Auto-scan OFF"} • Haptic {hapticEnabled ? "ON" : "OFF"}
         </p>
       </footer>
 

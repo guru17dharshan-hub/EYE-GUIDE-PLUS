@@ -35,7 +35,7 @@ serve(async (req) => {
   }
 
   try {
-    const { question } = await req.json();
+    const { question, language } = await req.json();
     if (!question) {
       return new Response(JSON.stringify({ error: "No question provided" }), {
         status: 400,
@@ -47,6 +47,12 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
+
+    // Language instruction for multilingual responses
+    const langCode = language || "en";
+    const langInstruction = langCode !== "en"
+      ? `\n\nIMPORTANT: The user is speaking in language code "${langCode}". You MUST respond entirely in that same language. If the language is Tamil (ta), respond in Tamil. If Hindi (hi), respond in Hindi. Match the user's language exactly.`
+      : "";
 
     // --- RAG: Retrieve relevant knowledge ---
     let contextText = "";
@@ -93,7 +99,7 @@ Key rules:
 - Prioritize information from the knowledge base when available
 - If asked about directions or navigation, give clear spatial guidance
 - Be warm and reassuring in tone
-- Never say "I can see" or reference visual content unless given an image`
+- Never say "I can see" or reference visual content unless given an image${langInstruction}`
       : `You are a helpful voice assistant for visually impaired users. You answer questions clearly and concisely in 1-3 short sentences, optimized for being read aloud by text-to-speech. 
 
 Key rules:
@@ -102,7 +108,7 @@ Key rules:
 - If asked about directions or navigation, give clear spatial guidance
 - If asked about time, weather, general knowledge — answer directly
 - Be warm and reassuring in tone
-- Never say "I can see" or reference visual content unless given an image`;
+- Never say "I can see" or reference visual content unless given an image${langInstruction}`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
