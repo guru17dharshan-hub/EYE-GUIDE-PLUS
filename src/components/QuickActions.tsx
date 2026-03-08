@@ -14,6 +14,7 @@ import {
   Vibrate,
   RefreshCw,
   HelpCircle,
+  Settings,
 } from "lucide-react";
 
 interface QuickActionsProps {
@@ -21,6 +22,7 @@ interface QuickActionsProps {
   autoScan: boolean;
   hapticEnabled: boolean;
   showMap: boolean;
+  onOpenManage?: () => void;
 }
 
 const actions = [
