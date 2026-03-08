@@ -220,7 +220,7 @@ const Navigate = () => {
       if ((autoScanRef.current || isBoarding) && !scanningRef.current) {
         analyzeFrame();
       }
-    }, isBoarding ? boardingState.autoScanInterval : 8000);
+    }, isBoarding ? boardingState.autoScanInterval * scanIntervalMultiplier : 8000 * scanIntervalMultiplier);
 
     return () => clearInterval(interval);
   }, [autoScan, analyzeFrame, isBoarding, boardingState.autoScanInterval]);
