@@ -90,6 +90,22 @@ const Navigate = () => {
     return () => clearInterval(interval);
   }, [autoScan, analyzeFrame]);
 
+  // Bus arrival voice alerts
+  const prevBusesRef = useRef<string[]>([]);
+  useEffect(() => {
+    const arrivingNow = buses.filter((b) => b.status === "arriving");
+    const newArrivals = arrivingNow.filter(
+      (b) => !prevBusesRef.current.includes(b.id)
+    );
+    newArrivals.forEach((bus) => {
+      addAlert(
+        `🚌 Bus ${bus.routeNumber} to ${bus.destination} is arriving! ${bus.distanceMeters} meters away.`,
+        true
+      );
+    });
+    prevBusesRef.current = arrivingNow.map((b) => b.id);
+  }, [buses, addAlert]);
+
   const handleSOS = useCallback(() => {
     addAlert("EMERGENCY SOS ACTIVATED. Contacting emergency services.");
     if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
