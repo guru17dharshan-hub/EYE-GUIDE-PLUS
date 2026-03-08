@@ -761,25 +761,27 @@ const Navigate = () => {
           <div className="relative">
             <button
               onClick={() => setShowLangPicker(prev => !prev)}
-              className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              className="flex items-center gap-2 text-sm px-3 py-2 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-bold shadow-md"
               aria-label={`Language: ${language.name}. Tap to change.`}
             >
-              <Globe className="h-3.5 w-3.5" />
-              {language.shortCode.toUpperCase()}
+              <Globe className="h-5 w-5" />
+              {language.name.split(" ")[0]}
             </button>
             {showLangPicker && (
-              <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[180px] max-h-[300px] overflow-y-auto">
+              <div className="absolute right-0 top-full mt-2 z-50 bg-card border-2 border-primary/20 rounded-2xl shadow-2xl py-2 min-w-[220px] max-h-[350px] overflow-y-auto">
+                <p className="px-4 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">AI Voice Language</p>
                 {languages.map((lang) => (
                   <button
                     key={lang.code}
                     onClick={() => {
                       setLanguage(lang);
+                      setLang(lang.voiceLang);
                       setShowLangPicker(false);
                       speak(`Language changed to ${lang.name}`, "high", lang.voiceLang);
-                      addAlert(`🌐 Language: ${lang.name}`);
+                      addAlert(`🌐 AI Language: ${lang.name}`);
                     }}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors ${
-                      lang.code === language.code ? "text-primary font-semibold bg-primary/5" : "text-foreground"
+                    className={`w-full text-left px-4 py-3 text-base hover:bg-accent transition-colors ${
+                      lang.code === language.code ? "text-primary font-bold bg-primary/10" : "text-foreground"
                     }`}
                   >
                     {lang.name}
