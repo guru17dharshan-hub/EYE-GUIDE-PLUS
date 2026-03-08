@@ -230,7 +230,7 @@ const Navigate = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       speak(
-        "Navigation mode active. Voice control is on. Point your camera ahead. Say Help for available commands."
+        "Navigation mode active. Voice control is on. Point your camera ahead. You can ask me any question or say Help for commands."
       );
     }, 500);
     return () => clearTimeout(timer);
