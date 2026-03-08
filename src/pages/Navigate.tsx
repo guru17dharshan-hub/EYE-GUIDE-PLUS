@@ -212,7 +212,8 @@ const Navigate = () => {
         addAlert(
           "Available commands: Scan, Find bus, Detect seat, Bus status, " +
           "Auto scan on, Auto scan off, Haptic on, Haptic off, " +
-          "Add contact, Show contacts, Emergency, SOS, Go home, Help."
+          "Add contact, Show contacts, Emergency, SOS, Go home. " +
+          "You can also ask me any question and I will answer."
         );
       }
       // Fallback — treat as a question for AI
