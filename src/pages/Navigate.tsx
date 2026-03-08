@@ -32,7 +32,7 @@ const Navigate = () => {
   const [aiThinking, setAiThinking] = useState(false);
   const { buses } = useMockBusTracker(busTrackingActive);
   const { contacts, addContact, removeContact, callContact, callAll } = useEmergencyContacts();
-  const { boardingState, processDetection, getPromptContext, reset: resetBoarding, isBoarding } = useBusBoarding(speak, hapticEnabled);
+  const { boardingState, processDetection, getPromptContext, reset: resetBoarding, isBoarding, setDestination } = useBusBoarding(speak, hapticEnabled);
   const { position, error: geoError } = useGeolocation(true);
   const { locations, setHome, addLocation, removeLocation, getHome, getFrequent } = useSavedLocations();
   const [showMap, setShowMap] = useState(false);
