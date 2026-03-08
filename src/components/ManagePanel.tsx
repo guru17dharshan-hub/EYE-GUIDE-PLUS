@@ -101,13 +101,33 @@ const ManagePanel = ({
   const handleSeedKnowledge = async () => {
     setKbSeeding(true);
     try {
-      const { data, error } = await supabase.functions.invoke("seed-knowledge", { body: {} });
-      if (error) throw error;
-      if (data?.message) {
-        toast.info(data.message);
-      } else {
-        toast.success(`Seeded ${data.documents} documents with ${data.total_chunks} chunks`);
+      // First, check what needs seeding
+      const { data: status, error: statusErr } = await supabase.functions.invoke("seed-knowledge", { body: {} });
+      if (statusErr) throw statusErr;
+
+      if (status?.done || status?.message) {
+        toast.info(status.message || "Knowledge base already seeded");
+        setKbSeeding(false);
+        return;
       }
+
+      const remaining = status.remaining || [];
+      let seeded = 0;
+
+      for (const item of remaining) {
+        toast.info(`Seeding: ${item.title}…`);
+        const { data, error } = await supabase.functions.invoke("seed-knowledge", {
+          body: { batch: item.index },
+        });
+        if (error) {
+          console.error(`Seed batch ${item.index} error:`, error);
+          toast.error(`Failed to seed "${item.title}"`);
+          continue;
+        }
+        if (data?.success) seeded++;
+      }
+
+      toast.success(`Seeded ${seeded} knowledge documents!`);
     } catch (e) {
       console.error("Seed error:", e);
       toast.error("Failed to seed knowledge base");
