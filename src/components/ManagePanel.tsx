@@ -1,13 +1,15 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  X, Plus, Trash2, Phone, MapPin, Home, Save, Users, Navigation, BookOpen, Loader2, Database,
+  X, Plus, Trash2, Phone, MapPin, Home, Save, Users, Navigation, BookOpen, Loader2, Database, UserCog,
 } from "lucide-react";
 import { EmergencyContact } from "@/hooks/useEmergencyContacts";
 import { SavedLocation } from "@/hooks/useSavedLocations";
 import { GeoPosition } from "@/hooks/useGeolocation";
+import { getStoredProfile, UserProfile } from "@/hooks/useOnboardingProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -29,7 +31,9 @@ const ManagePanel = ({
   locations, onSetHome, onAddLocation, onRemoveLocation,
   position, onClose,
 }: ManagePanelProps) => {
-  const [tab, setTab] = useState<"contacts" | "locations" | "knowledge">("contacts");
+  const navigate = useNavigate();
+  const [tab, setTab] = useState<"contacts" | "locations" | "knowledge" | "profile">("contacts");
+  const [userProfile] = useState<UserProfile>(getStoredProfile);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [locName, setLocName] = useState("");
@@ -184,6 +188,14 @@ const ManagePanel = ({
             className="flex-1"
           >
             <BookOpen className="h-4 w-4 mr-1.5" /> Knowledge
+          </Button>
+          <Button
+            variant={tab === "profile" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setTab("profile")}
+            className="flex-1"
+          >
+            <UserCog className="h-4 w-4 mr-1.5" /> Profile
           </Button>
         </div>
 
@@ -353,6 +365,43 @@ const ManagePanel = ({
                 {kbUploading ? "Embedding…" : "Add to Knowledge Base"}
               </Button>
             </div>
+          </div>
+        )}
+        {/* Profile Tab */}
+        {tab === "profile" && (
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Your current profile settings from initial setup.
+            </p>
+
+            <div className="space-y-2">
+              {[
+                { label: "Name", value: userProfile.name },
+                { label: "Mobility Aid", value: userProfile.mobilityAid || "Not set" },
+                { label: "Home Address", value: userProfile.homeAddress || "Not set" },
+                { label: "Emergency Contact", value: userProfile.emergencyContactName ? `${userProfile.emergencyContactName} — ${userProfile.emergencyContactPhone}` : "Not set" },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center gap-3 rounded-xl p-3 bg-muted border border-border">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground">{item.label}</p>
+                    <p className="text-sm font-semibold text-foreground truncate">{item.value}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full"
+              onClick={() => {
+                localStorage.removeItem("eyeguide_profile");
+                onClose();
+                navigate("/setup");
+              }}
+            >
+              <UserCog className="h-5 w-5 mr-2" /> Re-run Setup Wizard
+            </Button>
           </div>
         )}
       </div>
