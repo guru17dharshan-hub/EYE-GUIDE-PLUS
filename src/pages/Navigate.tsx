@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMockBusTracker } from "@/hooks/useMockBusTracker";
 import BusTracker from "@/components/BusTracker";
+import { useBusBoarding } from "@/hooks/useBusBoarding";
 import { useEmergencyContacts } from "@/hooks/useEmergencyContacts";
 import EmergencyContacts from "@/components/EmergencyContacts";
 import { useGeolocation } from "@/hooks/useGeolocation";
@@ -28,6 +29,7 @@ const Navigate = () => {
   const [aiThinking, setAiThinking] = useState(false);
   const { buses } = useMockBusTracker(busTrackingActive);
   const { contacts, addContact, removeContact, callContact, callAll } = useEmergencyContacts();
+  const { boardingState, processDetection, getPromptContext, reset: resetBoarding, isBoarding } = useBusBoarding(speak, hapticEnabled);
   const { position, error: geoError } = useGeolocation(true);
   const { locations, setHome, addLocation, removeLocation, getHome, getFrequent } = useSavedLocations();
   const [showMap, setShowMap] = useState(false);
@@ -63,14 +65,23 @@ const Navigate = () => {
     setAiScanning(true);
 
     try {
+      const boardingContext = boardingState.phase !== "idle"
+        ? { phase: boardingState.phase, prompt: getPromptContext() }
+        : undefined;
+
       const { data, error } = await supabase.functions.invoke("detect-objects", {
-        body: { image: frame },
+        body: { image: frame, boarding_context: boardingContext },
       });
 
       if (error) {
         console.error("Detection error:", error);
         toast.error("AI detection failed");
         return;
+      }
+
+      // Feed results into boarding state machine
+      if (data) {
+        processDetection(data);
       }
 
       if (data?.alert) {
@@ -91,7 +102,7 @@ const Navigate = () => {
       scanningRef.current = false;
       setAiScanning(false);
     }
-  }, [addAlert, hapticEnabled]);
+  }, [addAlert, hapticEnabled, boardingState.phase, getPromptContext, processDetection]);
 
   const askAI = useCallback(async (question: string) => {
     setAiThinking(true);
@@ -116,19 +127,20 @@ const Navigate = () => {
     }
   }, [addAlert]);
 
-  // Auto-scan loop
+  // Auto-scan loop — uses boarding state interval when boarding is active
   useEffect(() => {
     autoScanRef.current = autoScan;
-    if (!autoScan) return;
+    const shouldAutoScan = autoScan || isBoarding;
+    if (!shouldAutoScan) return;
 
     const interval = setInterval(() => {
-      if (autoScanRef.current && !scanningRef.current) {
+      if ((autoScanRef.current || isBoarding) && !scanningRef.current) {
         analyzeFrame();
       }
-    }, 8000);
+    }, isBoarding ? boardingState.autoScanInterval : 8000);
 
     return () => clearInterval(interval);
-  }, [autoScan, analyzeFrame]);
+  }, [autoScan, analyzeFrame, isBoarding, boardingState.autoScanInterval]);
 
   // Bus arrival voice alerts
   const prevBusesRef = useRef<string[]>([]);
@@ -463,6 +475,38 @@ const Navigate = () => {
           {!showMap && " — Say \"Show map\" to view"}
         </span>
       </section>
+
+      {/* Boarding Assistance Banner */}
+      {boardingState.phase !== "idle" && (
+        <section
+          className={`px-4 py-3 border-t border-border flex items-center gap-3 ${
+            boardingState.phase === "seated"
+              ? "bg-green-500/10 border-green-500/30"
+              : "bg-primary/10 border-primary/30"
+          }`}
+          aria-live="assertive"
+          aria-label="Bus boarding assistance"
+        >
+          <div className={`h-3 w-3 rounded-full shrink-0 animate-pulse ${
+            boardingState.phase === "seated" ? "bg-green-500" : "bg-primary"
+          }`} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">
+              🚌 Boarding Assistant — {boardingState.phase.replace("_", " ").toUpperCase()}
+              {boardingState.busRoute && ` (Route ${boardingState.busRoute})`}
+            </p>
+            <p className="text-xs text-muted-foreground">{boardingState.instructions}</p>
+          </div>
+          {boardingState.phase === "seated" && (
+            <button
+              onClick={() => resetBoarding()}
+              className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-accent"
+            >
+              Done
+            </button>
+          )}
+        </section>
+      )}
 
       {/* Bus Tracker */}
       <section className="p-4 bg-card border-t border-border" aria-label="Nearby buses">

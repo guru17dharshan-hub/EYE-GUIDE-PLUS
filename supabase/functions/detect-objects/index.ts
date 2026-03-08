@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { image } = await req.json();
+    const { image, boarding_context } = await req.json();
     if (!image) {
       return new Response(JSON.stringify({ error: "No image provided" }), {
         status: 400,
@@ -24,6 +24,11 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
+
+    // Build context-aware prompt based on boarding phase
+    const contextPrompt = boarding_context
+      ? `\n\nCURRENT BOARDING PHASE: "${boarding_context.phase}"\nSPECIFIC TASK: ${boarding_context.prompt}\n\nAdapt your response to help with this specific phase. Include a "boarding_phase_hint" field suggesting the next phase: "detected", "approaching", "boarding", "finding_seat", or "seated" based on what you see.`
+      : "";
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -41,18 +46,19 @@ serve(async (req) => {
               content: `You are an accessibility assistant for visually impaired users navigating public transit. Analyze the camera image and report ONLY what is immediately relevant for navigation safety.
 
 Respond with a JSON object with these fields:
-- "objects": array of detected objects relevant to transit (buses, seats, doors, obstacles, crosswalks, stairs, people, signs)
-- "alert": a short spoken alert (max 15 words) for the user. Be direct: "Bus approaching on your left" or "Empty seat available, second row right". If nothing notable, say "Path is clear ahead."
-- "urgency": "high" (immediate danger/bus arriving), "medium" (useful info like available seat), or "low" (nothing notable)
+- "objects": array of detected objects relevant to transit (buses, seats, doors, obstacles, crosswalks, stairs, people, signs, handrails, aisle)
+- "alert": a short spoken alert (max 20 words) for the user. Be direct and actionable: "Bus 42 ahead on your right, walk forward" or "Empty seat on your left, second row". If nothing notable, say "Path is clear ahead."
+- "urgency": "high" (immediate danger/bus arriving/boarding step), "medium" (useful info like available seat), or "low" (nothing notable)
+- "boarding_phase_hint": suggest the current boarding state based on what you see. One of: "detected" (bus visible), "approaching" (bus getting closer/door visible), "boarding" (at the door/steps), "finding_seat" (inside bus interior), "seated" (person appears seated). Omit if no bus context.
 
-Return ONLY valid JSON, no markdown.`,
+Return ONLY valid JSON, no markdown.${contextPrompt}`,
             },
             {
               role: "user",
               content: [
                 {
                   type: "text",
-                  text: "Analyze this camera frame for buses, seats, obstacles, and navigation hazards.",
+                  text: boarding_context?.prompt || "Analyze this camera frame for buses, seats, obstacles, and navigation hazards.",
                 },
                 {
                   type: "image_url",
@@ -89,10 +95,8 @@ Return ONLY valid JSON, no markdown.`,
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || "";
 
-    // Parse the JSON from the AI response
     let result;
     try {
-      // Strip markdown code fences if present
       const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
       result = JSON.parse(cleaned);
     } catch {
