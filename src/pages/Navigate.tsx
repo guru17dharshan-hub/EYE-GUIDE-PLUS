@@ -20,6 +20,7 @@ const Navigate = () => {
   const [autoScan, setAutoScan] = useState(false);
   const [busTrackingActive, setBusTrackingActive] = useState(true);
   const [showContacts, setShowContacts] = useState(false);
+  const [aiThinking, setAiThinking] = useState(false);
   const { buses } = useMockBusTracker(busTrackingActive);
   const { contacts, addContact, removeContact, callContact, callAll } = useEmergencyContacts();
   const autoScanRef = useRef(false);
@@ -78,6 +79,29 @@ const Navigate = () => {
       setAiScanning(false);
     }
   }, [addAlert, hapticEnabled]);
+
+  const askAI = useCallback(async (question: string) => {
+    setAiThinking(true);
+    addAlert("Let me think about that…", false);
+    try {
+      const { data, error } = await supabase.functions.invoke("ask-ai", {
+        body: { question },
+      });
+      if (error) {
+        console.error("Ask AI error:", error);
+        addAlert("Sorry, I could not get an answer right now.");
+        return;
+      }
+      if (data?.answer) {
+        addAlert(`🤖 ${data.answer}`);
+      }
+    } catch (e) {
+      console.error("Ask AI error:", e);
+      addAlert("Sorry, something went wrong with my answer.");
+    } finally {
+      setAiThinking(false);
+    }
+  }, [addAlert]);
 
   // Auto-scan loop
   useEffect(() => {
@@ -188,15 +212,16 @@ const Navigate = () => {
         addAlert(
           "Available commands: Scan, Find bus, Detect seat, Bus status, " +
           "Auto scan on, Auto scan off, Haptic on, Haptic off, " +
-          "Add contact, Show contacts, Emergency, SOS, Go home, Help."
+          "Add contact, Show contacts, Emergency, SOS, Go home. " +
+          "You can also ask me any question and I will answer."
         );
       }
-      // Fallback — read back what was heard
+      // Fallback — treat as a question for AI
       else {
-        addAlert(`I heard: ${command}. Say Help for available commands.`);
+        askAI(command);
       }
     },
-    [addAlert, handleSOS, navigate, analyzeFrame, buses]
+    [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI]
   );
 
   // Auto-start continuous voice recognition
@@ -205,7 +230,7 @@ const Navigate = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       speak(
-        "Navigation mode active. Voice control is on. Point your camera ahead. Say Help for available commands."
+        "Navigation mode active. Voice control is on. Point your camera ahead. You can ask me any question or say Help for commands."
       );
     }, 500);
     return () => clearTimeout(timer);
@@ -242,9 +267,11 @@ const Navigate = () => {
           <span className="text-sm text-foreground" aria-live="polite">
             {aiScanning
               ? "🤖 AI analyzing frame…"
-              : isListening
-                ? "🎙️ Listening — say a command"
-                : "Camera active"}
+              : aiThinking
+                ? "🤖 AI thinking…"
+                : isListening
+                  ? "🎙️ Listening — say a command or ask anything"
+                  : "Camera active"}
           </span>
         </div>
       </section>
@@ -265,7 +292,7 @@ const Navigate = () => {
       {/* Minimal status footer */}
       <footer className="p-3 bg-background border-t border-border text-center" aria-live="polite">
         <p className="text-xs text-muted-foreground">
-          🎙️ Voice-only mode — Say "Help" for commands • {autoScan ? "Auto-scan ON" : "Auto-scan OFF"} • Haptic {hapticEnabled ? "ON" : "OFF"}
+          🎙️ Voice-only mode — Ask anything or say "Help" • {autoScan ? "Auto-scan ON" : "Auto-scan OFF"} • Haptic {hapticEnabled ? "ON" : "OFF"}
         </p>
       </footer>
 
