@@ -76,6 +76,16 @@ const Navigate = () => {
   // Trip feedback system
   const { feedbackState, startTrip, endTrip, processVoiceInput: processFeedbackInput, cancelFeedback, isFeedbackActive } = useTripFeedback(speak, hapticEnabled);
 
+  // Edge-case detection (camera obstruction, low battery, missed stop, GPS cross-check)
+  const {
+    edgeCaseState,
+    checkFrameBrightness,
+    triggerMissedStop,
+    clearMissedStop,
+    crossCheckBusRoute,
+    scanIntervalMultiplier,
+  } = useEdgeCaseDetection(speak, hapticEnabled);
+
   // Track previous heading for recalibration
   const prevHeadingRef = useRef<number | null>(null);
   const headingChangeThreshold = 45; // degrees
