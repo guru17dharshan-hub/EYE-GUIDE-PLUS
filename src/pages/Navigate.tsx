@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, Camera, Eye, Loader2 } from "lucide-react";
+import { AlertTriangle, Camera, Eye, Loader2, MapPin } from "lucide-react";
 import { useSpeech } from "@/hooks/useSpeech";
 import { useVoiceCommand } from "@/hooks/useVoiceCommand";
 import CameraFeed, { CameraFeedRef } from "@/components/CameraFeed";
@@ -11,6 +11,9 @@ import { useMockBusTracker } from "@/hooks/useMockBusTracker";
 import BusTracker from "@/components/BusTracker";
 import { useEmergencyContacts } from "@/hooks/useEmergencyContacts";
 import EmergencyContacts from "@/components/EmergencyContacts";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { useSavedLocations } from "@/hooks/useSavedLocations";
+import LocationMap from "@/components/LocationMap";
 
 const Navigate = () => {
   const navigate = useNavigate();
