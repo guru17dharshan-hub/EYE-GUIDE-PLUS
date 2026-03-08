@@ -143,10 +143,13 @@ const Navigate = () => {
   }, [autoScan, analyzeFrame, isBoarding, boardingState.autoScanInterval]);
 
   // Bus arrival voice alerts
+  // Only alert for buses that are very close (<100m) and arriving within 2 minutes
   const prevBusesRef = useRef<string[]>([]);
   useEffect(() => {
-    const arrivingNow = buses.filter((b) => b.status === "arriving");
-    const newArrivals = arrivingNow.filter(
+    const imminentBuses = buses.filter(
+      (b) => b.status === "arriving" && b.distanceMeters < 100 && b.etaMinutes < 2
+    );
+    const newArrivals = imminentBuses.filter(
       (b) => !prevBusesRef.current.includes(b.id)
     );
     newArrivals.forEach((bus) => {
@@ -155,7 +158,7 @@ const Navigate = () => {
         true
       );
     });
-    prevBusesRef.current = arrivingNow.map((b) => b.id);
+    prevBusesRef.current = imminentBuses.map((b) => b.id);
   }, [buses, addAlert]);
 
   const handleSOS = useCallback(() => {
