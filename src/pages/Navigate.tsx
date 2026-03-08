@@ -662,11 +662,44 @@ const Navigate = () => {
         <h1 className="text-xl font-bold text-foreground">
           EyeGuide<span className="text-primary">+</span>
         </h1>
-        <div className="flex items-center gap-2 text-primary" aria-live="polite">
-          <div className={`h-3 w-3 rounded-full ${isListening ? "bg-primary animate-pulse" : "bg-muted-foreground"}`} />
-          <span className="text-sm font-medium">
-            {isListening ? "Listening" : "Voice off"}
-          </span>
+        <div className="flex items-center gap-3">
+          {/* Language Picker */}
+          <div className="relative">
+            <button
+              onClick={() => setShowLangPicker(prev => !prev)}
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              aria-label={`Language: ${language.name}. Tap to change.`}
+            >
+              <Globe className="h-3.5 w-3.5" />
+              {language.shortCode.toUpperCase()}
+            </button>
+            {showLangPicker && (
+              <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-lg py-1 min-w-[180px] max-h-[300px] overflow-y-auto">
+                {languages.map((lang) => (
+                  <button
+                    key={lang.code}
+                    onClick={() => {
+                      setLanguage(lang);
+                      setShowLangPicker(false);
+                      speak(`Language changed to ${lang.name}`, "high", lang.voiceLang);
+                      addAlert(`🌐 Language: ${lang.name}`);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors ${
+                      lang.code === language.code ? "text-primary font-semibold bg-primary/5" : "text-foreground"
+                    }`}
+                  >
+                    {lang.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-primary" aria-live="polite">
+            <div className={`h-3 w-3 rounded-full ${isListening ? "bg-primary animate-pulse" : "bg-muted-foreground"}`} />
+            <span className="text-sm font-medium">
+              {isListening ? "Listening" : "Voice off"}
+            </span>
+          </div>
         </div>
       </header>
 
