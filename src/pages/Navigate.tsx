@@ -197,6 +197,7 @@ const Navigate = () => {
   const handleVoiceCommand = useCallback(
     (command: string) => {
       const lower = command.toLowerCase();
+      setVoiceTranscripts((prev) => [`🎙️ ${command}`, ...prev].slice(0, 10));
 
       // ---- Voice contact state machine ----
       if (voiceContactModeRef.current === "awaiting_name") {
