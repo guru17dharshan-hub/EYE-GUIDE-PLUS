@@ -406,10 +406,12 @@ const Navigate = () => {
         </div>
       </header>
 
-      {/* Camera Feed */}
-      <section className="relative flex-1 min-h-[300px]" aria-label="Camera feed">
-        <CameraFeed ref={cameraRef} />
-        <div className="absolute bottom-4 left-4 right-4 flex items-center gap-2 bg-card/80 backdrop-blur-sm rounded-xl p-3 border border-border">
+      {/* Camera Feed - compact left tab */}
+      <section className="flex items-start gap-3 p-3 bg-card border-b border-border" aria-label="Camera feed">
+        <div className="relative w-32 h-24 rounded-xl overflow-hidden border border-border shrink-0">
+          <CameraFeed ref={cameraRef} />
+        </div>
+        <div className="flex-1 flex items-center gap-2 min-h-[96px]">
           {aiScanning ? (
             <Loader2 className="h-5 w-5 text-primary shrink-0 animate-spin" aria-hidden="true" />
           ) : (
