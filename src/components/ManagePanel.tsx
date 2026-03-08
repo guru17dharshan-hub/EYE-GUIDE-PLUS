@@ -1,20 +1,21 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  X, Plus, Trash2, Phone, MapPin, Home, Save, Users, Navigation,
+  X, Plus, Trash2, Phone, MapPin, Home, Save, Users, Navigation, BookOpen, Loader2, Database,
 } from "lucide-react";
 import { EmergencyContact } from "@/hooks/useEmergencyContacts";
 import { SavedLocation } from "@/hooks/useSavedLocations";
 import { GeoPosition } from "@/hooks/useGeolocation";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ManagePanelProps {
-  // Contacts
   contacts: EmergencyContact[];
   onAddContact: (name: string, phone: string) => void;
   onRemoveContact: (id: string) => void;
   onCallContact: (contact: EmergencyContact) => void;
-  // Locations
   locations: SavedLocation[];
   onSetHome: (lat: number, lng: number) => void;
   onAddLocation: (name: string, lat: number, lng: number) => SavedLocation;
@@ -28,13 +29,20 @@ const ManagePanel = ({
   locations, onSetHome, onAddLocation, onRemoveLocation,
   position, onClose,
 }: ManagePanelProps) => {
-  const [tab, setTab] = useState<"contacts" | "locations">("contacts");
+  const [tab, setTab] = useState<"contacts" | "locations" | "knowledge">("contacts");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [locName, setLocName] = useState("");
   const [manualLat, setManualLat] = useState("");
   const [manualLng, setManualLng] = useState("");
   const [useManualCoords, setUseManualCoords] = useState(false);
+
+  // Knowledge tab state
+  const [kbTitle, setKbTitle] = useState("");
+  const [kbContent, setKbContent] = useState("");
+  const [kbCategory, setKbCategory] = useState("general");
+  const [kbUploading, setKbUploading] = useState(false);
+  const [kbSeeding, setKbSeeding] = useState(false);
 
   const handleAddContact = () => {
     if (!name.trim() || !phone.trim()) return;
@@ -71,6 +79,43 @@ const ManagePanel = ({
     }
   };
 
+  const handleAddKnowledge = async () => {
+    if (!kbTitle.trim() || !kbContent.trim()) return;
+    setKbUploading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("embed-document", {
+        body: { title: kbTitle, content: kbContent, category: kbCategory, source: "manual" },
+      });
+      if (error) throw error;
+      toast.success(`Added "${kbTitle}" — ${data.chunks_count} chunks embedded`);
+      setKbTitle("");
+      setKbContent("");
+    } catch (e) {
+      console.error("Knowledge add error:", e);
+      toast.error("Failed to add knowledge");
+    } finally {
+      setKbUploading(false);
+    }
+  };
+
+  const handleSeedKnowledge = async () => {
+    setKbSeeding(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("seed-knowledge", { body: {} });
+      if (error) throw error;
+      if (data?.message) {
+        toast.info(data.message);
+      } else {
+        toast.success(`Seeded ${data.documents} documents with ${data.total_chunks} chunks`);
+      }
+    } catch (e) {
+      console.error("Seed error:", e);
+      toast.error("Failed to seed knowledge base");
+    } finally {
+      setKbSeeding(false);
+    }
+  };
+
   const canSaveLocation = useManualCoords
     ? locName.trim() && !isNaN(parseFloat(manualLat)) && !isNaN(parseFloat(manualLng))
     : position && locName.trim();
@@ -83,7 +128,7 @@ const ManagePanel = ({
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-background/80 backdrop-blur-sm"
       role="dialog"
-      aria-label="Manage contacts and locations"
+      aria-label="Manage contacts, locations, and knowledge"
     >
       <div className="w-full max-w-md bg-card border border-border rounded-t-2xl sm:rounded-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
         {/* Header */}
@@ -111,6 +156,14 @@ const ManagePanel = ({
             className="flex-1"
           >
             <MapPin className="h-4 w-4 mr-1.5" /> Locations
+          </Button>
+          <Button
+            variant={tab === "knowledge" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setTab("knowledge")}
+            className="flex-1"
+          >
+            <BookOpen className="h-4 w-4 mr-1.5" /> Knowledge
           </Button>
         </div>
 
@@ -140,30 +193,9 @@ const ManagePanel = ({
               </div>
             )}
             <div className="space-y-2 pt-2 border-t border-border">
-              <Input
-                placeholder="Contact name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                maxLength={100}
-                aria-label="Contact name"
-                className="bg-background"
-              />
-              <Input
-                placeholder="Phone number"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                maxLength={20}
-                aria-label="Phone number"
-                className="bg-background"
-              />
-              <Button
-                variant="outline"
-                size="lg"
-                className="w-full"
-                onClick={handleAddContact}
-                disabled={!name.trim() || !phone.trim()}
-              >
+              <Input placeholder="Contact name" value={name} onChange={(e) => setName(e.target.value)} maxLength={100} aria-label="Contact name" className="bg-background" />
+              <Input placeholder="Phone number" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} aria-label="Phone number" className="bg-background" />
+              <Button variant="outline" size="lg" className="w-full" onClick={handleAddContact} disabled={!name.trim() || !phone.trim()}>
                 <Plus className="h-5 w-5 mr-2" /> Add Contact
               </Button>
             </div>
@@ -173,95 +205,42 @@ const ManagePanel = ({
         {/* Locations Tab */}
         {tab === "locations" && (
           <div className="space-y-3">
-            {/* Current position info */}
             <div className="flex items-center gap-2 rounded-xl p-3 bg-primary/10 border border-primary/20">
               <Navigation className="h-4 w-4 text-primary shrink-0" />
               <span className="text-xs text-foreground">
-                {position
-                  ? `Current: ${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}`
-                  : "Location not available yet…"}
+                {position ? `Current: ${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}` : "Location not available yet…"}
               </span>
             </div>
 
-            {/* Toggle: use GPS or manual */}
             <div className="flex gap-2">
-              <Button
-                variant={!useManualCoords ? "default" : "outline"}
-                size="sm"
-                className="flex-1"
-                onClick={() => setUseManualCoords(false)}
-              >
+              <Button variant={!useManualCoords ? "default" : "outline"} size="sm" className="flex-1" onClick={() => setUseManualCoords(false)}>
                 <Navigation className="h-4 w-4 mr-1.5" /> Use GPS
               </Button>
-              <Button
-                variant={useManualCoords ? "default" : "outline"}
-                size="sm"
-                className="flex-1"
-                onClick={() => setUseManualCoords(true)}
-              >
+              <Button variant={useManualCoords ? "default" : "outline"} size="sm" className="flex-1" onClick={() => setUseManualCoords(true)}>
                 <MapPin className="h-4 w-4 mr-1.5" /> Enter Manually
               </Button>
             </div>
 
-            {/* Manual coordinate inputs */}
             {useManualCoords && (
               <div className="flex gap-2">
-                <Input
-                  placeholder="Latitude"
-                  type="number"
-                  step="any"
-                  value={manualLat}
-                  onChange={(e) => setManualLat(e.target.value)}
-                  aria-label="Latitude"
-                  className="bg-background flex-1"
-                />
-                <Input
-                  placeholder="Longitude"
-                  type="number"
-                  step="any"
-                  value={manualLng}
-                  onChange={(e) => setManualLng(e.target.value)}
-                  aria-label="Longitude"
-                  className="bg-background flex-1"
-                />
+                <Input placeholder="Latitude" type="number" step="any" value={manualLat} onChange={(e) => setManualLat(e.target.value)} aria-label="Latitude" className="bg-background flex-1" />
+                <Input placeholder="Longitude" type="number" step="any" value={manualLng} onChange={(e) => setManualLng(e.target.value)} aria-label="Longitude" className="bg-background flex-1" />
               </div>
             )}
 
-            {/* Quick save buttons */}
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={handleSaveAsHome}
-              disabled={!canSaveHome}
-            >
+            <Button variant="outline" size="sm" className="w-full" onClick={handleSaveAsHome} disabled={!canSaveHome}>
               <Home className="h-4 w-4 mr-1.5" /> Set {useManualCoords ? "Coordinates" : "Current Location"} as Home
             </Button>
 
-            {/* Save with custom name */}
             <div className="flex gap-2">
-              <Input
-                placeholder="Location name (e.g. Office)"
-                value={locName}
-                onChange={(e) => setLocName(e.target.value)}
-                maxLength={100}
-                aria-label="Location name"
-                className="bg-background flex-1"
-              />
-              <Button
-                variant="outline"
-                onClick={handleSaveCurrentLocation}
-                disabled={!canSaveLocation}
-              >
+              <Input placeholder="Location name (e.g. Office)" value={locName} onChange={(e) => setLocName(e.target.value)} maxLength={100} aria-label="Location name" className="bg-background flex-1" />
+              <Button variant="outline" onClick={handleSaveCurrentLocation} disabled={!canSaveLocation}>
                 <Save className="h-4 w-4" />
               </Button>
             </div>
 
-            {/* Saved locations list */}
             {locations.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No saved locations yet.
-              </p>
+              <p className="text-sm text-muted-foreground text-center py-4">No saved locations yet.</p>
             ) : (
               <div className="space-y-2" role="list">
                 {locations.map((loc) => (
@@ -271,10 +250,7 @@ const ManagePanel = ({
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">{loc.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {loc.lat.toFixed(4)}, {loc.lng.toFixed(4)}
-                        {loc.visits ? ` • ${loc.visits} visits` : ""}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{loc.lat.toFixed(4)}, {loc.lng.toFixed(4)}{loc.visits ? ` • ${loc.visits} visits` : ""}</p>
                     </div>
                     <Button variant="ghost" size="sm" onClick={() => onRemoveLocation(loc.id)} aria-label={`Remove ${loc.name}`} className="text-destructive">
                       <Trash2 className="h-4 w-4" />
@@ -283,6 +259,80 @@ const ManagePanel = ({
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Knowledge Tab */}
+        {tab === "knowledge" && (
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Add knowledge to improve AI answers. The AI will search this knowledge base before answering your questions.
+            </p>
+
+            {/* Seed default knowledge */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={handleSeedKnowledge}
+              disabled={kbSeeding}
+            >
+              {kbSeeding ? (
+                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+              ) : (
+                <Database className="h-4 w-4 mr-1.5" />
+              )}
+              {kbSeeding ? "Seeding knowledge…" : "Load Default Knowledge (transit, safety, accessibility)"}
+            </Button>
+
+            <div className="border-t border-border pt-3 space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Add Custom Knowledge</p>
+
+              <Input
+                placeholder="Title (e.g. My Bus Route)"
+                value={kbTitle}
+                onChange={(e) => setKbTitle(e.target.value)}
+                maxLength={200}
+                aria-label="Knowledge title"
+                className="bg-background"
+              />
+
+              <select
+                value={kbCategory}
+                onChange={(e) => setKbCategory(e.target.value)}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+                aria-label="Category"
+              >
+                <option value="general">General</option>
+                <option value="transit">Transit</option>
+                <option value="safety">Safety</option>
+                <option value="accessibility">Accessibility</option>
+              </select>
+
+              <Textarea
+                placeholder="Paste or type knowledge content here… (e.g. bus schedules, route info, safety tips, or any information you want the AI to know)"
+                value={kbContent}
+                onChange={(e) => setKbContent(e.target.value)}
+                rows={5}
+                aria-label="Knowledge content"
+                className="bg-background resize-none"
+              />
+
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full"
+                onClick={handleAddKnowledge}
+                disabled={!kbTitle.trim() || !kbContent.trim() || kbUploading}
+              >
+                {kbUploading ? (
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                ) : (
+                  <Plus className="h-5 w-5 mr-2" />
+                )}
+                {kbUploading ? "Embedding…" : "Add to Knowledge Base"}
+              </Button>
+            </div>
           </div>
         )}
       </div>
