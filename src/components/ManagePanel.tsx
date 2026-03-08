@@ -367,6 +367,43 @@ const ManagePanel = ({
             </div>
           </div>
         )}
+        {/* Profile Tab */}
+        {tab === "profile" && (
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Your current profile settings from initial setup.
+            </p>
+
+            <div className="space-y-2">
+              {[
+                { label: "Name", value: userProfile.name },
+                { label: "Mobility Aid", value: userProfile.mobilityAid || "Not set" },
+                { label: "Home Address", value: userProfile.homeAddress || "Not set" },
+                { label: "Emergency Contact", value: userProfile.emergencyContactName ? `${userProfile.emergencyContactName} — ${userProfile.emergencyContactPhone}` : "Not set" },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center gap-3 rounded-xl p-3 bg-muted border border-border">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground">{item.label}</p>
+                    <p className="text-sm font-semibold text-foreground truncate">{item.value}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full"
+              onClick={() => {
+                localStorage.removeItem("eyeguide_profile");
+                onClose();
+                navigate("/setup");
+              }}
+            >
+              <UserCog className="h-5 w-5 mr-2" /> Re-run Setup Wizard
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
