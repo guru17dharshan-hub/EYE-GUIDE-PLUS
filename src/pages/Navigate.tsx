@@ -14,6 +14,7 @@ import EmergencyContacts from "@/components/EmergencyContacts";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useSavedLocations } from "@/hooks/useSavedLocations";
 import LocationMap from "@/components/LocationMap";
+import QuickActions from "@/components/QuickActions";
 
 const Navigate = () => {
   const navigate = useNavigate();
@@ -453,6 +454,14 @@ const Navigate = () => {
         </h2>
         <BusTracker buses={buses} />
       </section>
+
+      {/* Quick Action Buttons */}
+      <QuickActions
+        onAction={handleVoiceCommand}
+        autoScan={autoScan}
+        hapticEnabled={hapticEnabled}
+        showMap={showMap}
+      />
 
       {/* Alert Log */}
       <section className="p-4 bg-card border-t border-border" aria-label="Audio alerts">
