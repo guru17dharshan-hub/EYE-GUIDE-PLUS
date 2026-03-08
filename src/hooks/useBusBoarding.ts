@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { getBoardingHaptic } from "@/utils/haptics";
 
 export type BoardingPhase =
   | "idle"        // No bus detected
@@ -69,11 +70,7 @@ export const useBusBoarding = (
       if (config.instruction) {
         speakFn(config.instruction);
         if (hapticEnabled && navigator.vibrate) {
-          // Distinct haptic pattern per phase
-          if (phase === "detected") navigator.vibrate([200, 100, 200]);
-          else if (phase === "boarding") navigator.vibrate([300, 100, 300, 100, 300]);
-          else if (phase === "seated") navigator.vibrate([100]);
-          else navigator.vibrate(150);
+          navigator.vibrate(getBoardingHaptic(phase));
         }
       }
     },

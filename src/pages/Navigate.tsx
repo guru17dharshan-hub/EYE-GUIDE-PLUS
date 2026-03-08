@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, Camera, Eye, Loader2, MapPin } from "lucide-react";
+import { AlertTriangle, Camera, Eye, Loader2, MapPin, QrCode } from "lucide-react";
+import { getProximityVibration, startProximityPulse } from "@/utils/haptics";
 import { useSpeech } from "@/hooks/useSpeech";
 import { useVoiceCommand } from "@/hooks/useVoiceCommand";
 import CameraFeed, { CameraFeedRef } from "@/components/CameraFeed";
@@ -17,6 +18,7 @@ import { useSavedLocations } from "@/hooks/useSavedLocations";
 import LocationMap from "@/components/LocationMap";
 import QuickActions from "@/components/QuickActions";
 import ManagePanel from "@/components/ManagePanel";
+import { useTransitCardScanner } from "@/hooks/useTransitCardScanner";
 
 const Navigate = () => {
   const navigate = useNavigate();
@@ -38,6 +40,7 @@ const Navigate = () => {
   const autoScanRef = useRef(false);
   const cameraRef = useRef<CameraFeedRef>(null);
   const scanningRef = useRef(false);
+  const { lastScan, scanFromDataUrl, supported: qrSupported, clearScan } = useTransitCardScanner();
   // Voice contact addition state machine: "idle" | "awaiting_name" | "awaiting_phone"
   const voiceContactModeRef = useRef<"idle" | "awaiting_name" | "awaiting_phone">("idle");
   const pendingContactNameRef = useRef("");
@@ -145,6 +148,35 @@ const Navigate = () => {
 
   // Bus arrival voice alerts
   // Only alert for buses that are very close (<100m) and arriving within 2 minutes
+  // Progressive haptic pulse for nearest bus
+  const hapticCleanupRef = useRef<(() => void) | null>(null);
+  const closestBusRef = useRef<number>(Infinity);
+
+  useEffect(() => {
+    const closest = buses.reduce((min, b) => Math.min(min, b.distanceMeters), Infinity);
+    closestBusRef.current = closest;
+
+    // Start proximity pulse when a bus is within 500m
+    if (hapticEnabled && closest <= 500 && !hapticCleanupRef.current) {
+      hapticCleanupRef.current = startProximityPulse(
+        () => closestBusRef.current,
+        () => hapticEnabled
+      );
+    }
+    // Stop when no buses nearby or haptic disabled
+    if ((closest > 500 || !hapticEnabled) && hapticCleanupRef.current) {
+      hapticCleanupRef.current();
+      hapticCleanupRef.current = null;
+    }
+
+    return () => {
+      if (hapticCleanupRef.current) {
+        hapticCleanupRef.current();
+        hapticCleanupRef.current = null;
+      }
+    };
+  }, [buses, hapticEnabled]);
+
   const prevBusesRef = useRef<string[]>([]);
   useEffect(() => {
     const imminentBuses = buses.filter(
@@ -158,9 +190,14 @@ const Navigate = () => {
         `🚌 Bus ${bus.routeNumber} to ${bus.destination} is arriving! ${bus.distanceMeters} meters away.`,
         true
       );
+      // Intense haptic for imminent arrival
+      if (hapticEnabled && navigator.vibrate) {
+        const pattern = getProximityVibration(bus.distanceMeters);
+        navigator.vibrate(pattern);
+      }
     });
     prevBusesRef.current = imminentBuses.map((b) => b.id);
-  }, [buses, addAlert]);
+  }, [buses, addAlert, hapticEnabled]);
 
   const handleSOS = useCallback(() => {
     addAlert("EMERGENCY SOS ACTIVATED. Contacting emergency services.");
@@ -238,8 +275,26 @@ const Navigate = () => {
       }
 
       // ---- Regular commands ----
+      // Transit card scanning
+      if (lower.includes("scan card") || lower.includes("scan ticket") || lower.includes("transit card") || lower.includes("scan pass")) {
+        if (qrSupported === false) {
+          addAlert("QR scanning is not supported on this device. Try Chrome on Android.");
+        } else {
+          addAlert("Hold your transit card or QR code in front of the camera.");
+          const frame = cameraRef.current?.captureFrame();
+          if (frame) {
+            scanFromDataUrl(frame).then((result) => {
+              if (result) {
+                addAlert(`✅ Card scanned! Code: ${result.rawValue}`, true, "high");
+              } else {
+                addAlert("No QR code or barcode detected. Try holding it closer.");
+              }
+            });
+          }
+        }
+      }
       // Navigation commands
-      if (lower.includes("find") && lower.includes("bus")) {
+      else if (lower.includes("find") && lower.includes("bus")) {
         addAlert("Scanning for buses…");
         analyzeFrame();
       } else if (lower.includes("detect") && lower.includes("seat")) {
@@ -380,7 +435,7 @@ const Navigate = () => {
       // Help
       else if (lower.includes("help") || lower.includes("command") || lower.includes("what can")) {
         addAlert(
-          "Available commands: Scan, Find bus, Detect seat, Bus status, " +
+          "Available commands: Scan, Find bus, Detect seat, Bus status, Scan card, " +
           "Auto scan on, Auto scan off, Haptic on, Haptic off, " +
           "Add contact, My contacts, Call, Remove contact, Emergency, SOS, " +
           "Where am I, Show map, Save home, Save location, My places, Go home. " +
@@ -392,7 +447,7 @@ const Navigate = () => {
         askAI(command);
       }
     },
-    [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI, contacts, addContact, removeContact, callContact, extractPhoneFromSpeech, position, setHome, addLocation, getHome, getFrequent, locations]
+    [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI, contacts, addContact, removeContact, callContact, extractPhoneFromSpeech, position, setHome, addLocation, getHome, getFrequent, locations, scanFromDataUrl, qrSupported]
   );
 
   // Auto-start continuous voice recognition
@@ -515,10 +570,28 @@ const Navigate = () => {
 
       {/* Bus Tracker */}
       <section className="p-4 bg-card border-t border-border" aria-label="Nearby buses">
-        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">
-          🚌 Nearby Buses
-        </h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
+            🚌 Nearby Buses
+          </h2>
+          <button
+            onClick={() => handleVoiceCommand("scan card")}
+            className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+            aria-label="Scan transit card"
+          >
+            <QrCode className="h-3.5 w-3.5" />
+            Scan Card
+          </button>
+        </div>
         <BusTracker buses={buses} />
+        {lastScan && (
+          <div className="mt-2 p-2 rounded-lg bg-green-500/10 border border-green-500/30 flex items-center justify-between">
+            <p className="text-xs text-foreground">
+              ✅ Last scan: <span className="font-mono">{lastScan.rawValue.slice(0, 40)}</span>
+            </p>
+            <button onClick={clearScan} className="text-xs text-muted-foreground hover:text-foreground">✕</button>
+          </div>
+        )}
       </section>
 
       {/* Quick Action Buttons */}
