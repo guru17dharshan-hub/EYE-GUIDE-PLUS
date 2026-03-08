@@ -48,10 +48,16 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Language instruction for multilingual responses
+    // Language mapping for stronger instruction
+    const LANG_NAMES: Record<string, string> = {
+      ta: "Tamil (தமிழ்)", hi: "Hindi (हिन्दी)", te: "Telugu (తెలుగు)",
+      kn: "Kannada (ಕನ್ನಡ)", ml: "Malayalam (മലയാളം)", es: "Spanish",
+      fr: "French", ar: "Arabic (العربية)", zh: "Chinese (中文)",
+    };
     const langCode = language || "en";
-    const langInstruction = langCode !== "en"
-      ? `\n\nIMPORTANT: The user is speaking in language code "${langCode}". You MUST respond entirely in that same language. If the language is Tamil (ta), respond in Tamil. If Hindi (hi), respond in Hindi. Match the user's language exactly.`
+    const langName = LANG_NAMES[langCode] || null;
+    const langInstruction = langName
+      ? `\n\nCRITICAL LANGUAGE REQUIREMENT: You MUST respond ENTIRELY in ${langName}. Every single word of your response must be in ${langName}. Do NOT use English at all. This is mandatory.`
       : "";
 
     // --- RAG: Retrieve relevant knowledge ---
