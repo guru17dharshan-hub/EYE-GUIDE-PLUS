@@ -187,7 +187,17 @@ const Navigate = () => {
 
       // Feed results into boarding state machine
       if (data) {
-        processDetection(data);
+        // GPS cross-check for unreadable bus number
+        if (data.alert && (data.alert.toLowerCase().includes("unclear") || data.alert.toLowerCase().includes("unreadable") || data.alert.toLowerCase().includes("can't read"))) {
+          const confirmedRoute = crossCheckBusRoute(buses);
+          if (confirmedRoute) {
+            processDetection({ ...data, boarding_phase_hint: "detected" });
+          } else {
+            processDetection(data);
+          }
+        } else {
+          processDetection(data);
+        }
       }
 
       if (data?.alert) {
