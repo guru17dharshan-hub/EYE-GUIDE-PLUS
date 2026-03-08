@@ -20,6 +20,7 @@ import QuickActions from "@/components/QuickActions";
 import ManagePanel from "@/components/ManagePanel";
 import { useTransitCardScanner } from "@/hooks/useTransitCardScanner";
 import { useFallDetection } from "@/hooks/useFallDetection";
+import { useTripFeedback } from "@/hooks/useTripFeedback";
 
 const Navigate = () => {
   const navigate = useNavigate();
