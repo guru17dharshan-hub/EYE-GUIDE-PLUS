@@ -20,7 +20,9 @@ const Navigate = () => {
   const [aiScanning, setAiScanning] = useState(false);
   const [autoScan, setAutoScan] = useState(false);
   const [busTrackingActive, setBusTrackingActive] = useState(true);
+  const [showContacts, setShowContacts] = useState(false);
   const { buses } = useMockBusTracker(busTrackingActive);
+  const { contacts, addContact, removeContact, callContact, callAll } = useEmergencyContacts();
   const autoScanRef = useRef(false);
   const cameraRef = useRef<CameraFeedRef>(null);
   const scanningRef = useRef(false);
