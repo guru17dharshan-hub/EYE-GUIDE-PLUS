@@ -764,7 +764,45 @@ const Navigate = () => {
         </section>
       )}
 
-      {/* Bus Tracker */}
+      {/* Camera Obstruction Alert */}
+      {edgeCaseState.cameraObstructed && (
+        <section className="px-4 py-3 border-t border-border bg-accent/20 flex items-center gap-3" aria-live="assertive">
+          <Camera className="h-5 w-5 text-accent-foreground shrink-0 animate-pulse" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-foreground">📷 Camera Obstructed</p>
+            <p className="text-xs text-muted-foreground">Hold phone outward or clip it to your chest.</p>
+          </div>
+        </section>
+      )}
+
+      {/* Low Battery Alert */}
+      {edgeCaseState.powerSaving && (
+        <section className="px-4 py-3 border-t border-border bg-accent/20 flex items-center gap-3" aria-live="polite">
+          <span className="text-lg" aria-hidden="true">🔋</span>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-foreground">Power-Saving Mode — {edgeCaseState.batteryLevel}%</p>
+            <p className="text-xs text-muted-foreground">Scan frequency reduced. Emergency features still active.</p>
+          </div>
+        </section>
+      )}
+
+      {/* Missed Stop Alert */}
+      {edgeCaseState.missedStop && (
+        <section className="px-4 py-3 border-t border-destructive bg-destructive/10 flex items-center gap-3" aria-live="assertive">
+          <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-bold text-destructive">Missed Stop: {edgeCaseState.missedStopName}</p>
+            <p className="text-xs text-muted-foreground">Stay seated. I'll guide you to the next option.</p>
+          </div>
+          <button
+            onClick={clearMissedStop}
+            className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground hover:bg-accent"
+          >
+            Dismiss
+          </button>
+        </section>
+      )}
+
       <section className="p-4 bg-card border-t border-border" aria-label="Nearby buses">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
