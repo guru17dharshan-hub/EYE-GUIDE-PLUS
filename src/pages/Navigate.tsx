@@ -275,8 +275,26 @@ const Navigate = () => {
       }
 
       // ---- Regular commands ----
+      // Transit card scanning
+      if (lower.includes("scan card") || lower.includes("scan ticket") || lower.includes("transit card") || lower.includes("scan pass")) {
+        if (qrSupported === false) {
+          addAlert("QR scanning is not supported on this device. Try Chrome on Android.");
+        } else {
+          addAlert("Hold your transit card or QR code in front of the camera.");
+          const frame = cameraRef.current?.captureFrame();
+          if (frame) {
+            scanFromDataUrl(frame).then((result) => {
+              if (result) {
+                addAlert(`✅ Card scanned! Code: ${result.rawValue}`, true, "high");
+              } else {
+                addAlert("No QR code or barcode detected. Try holding it closer.");
+              }
+            });
+          }
+        }
+      }
       // Navigation commands
-      if (lower.includes("find") && lower.includes("bus")) {
+      else if (lower.includes("find") && lower.includes("bus")) {
         addAlert("Scanning for buses…");
         analyzeFrame();
       } else if (lower.includes("detect") && lower.includes("seat")) {
