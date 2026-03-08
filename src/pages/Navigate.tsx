@@ -144,6 +144,9 @@ const Navigate = () => {
     scanningRef.current = true;
     setAiScanning(true);
 
+    // Check for camera obstruction
+    checkFrameBrightness(frame);
+
     try {
       const boardingContext = boardingState.phase !== "idle"
         ? { phase: boardingState.phase, prompt: getPromptContext() }
