@@ -646,6 +646,8 @@ const Navigate = () => {
       className="flex min-h-screen flex-col"
       role="main"
       aria-label="Navigation Screen"
+      onTouchStart={handleTripleTap}
+      onClick={handleTripleTap}
     >
       {/* Header */}
       <header className="flex items-center justify-between p-4 border-b border-border bg-card">
