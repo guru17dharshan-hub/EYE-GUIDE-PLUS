@@ -147,19 +147,19 @@ const Navigate = () => {
   const addAlert = useCallback(
     (message: string, vibrate = true, priority: "normal" | "high" = "normal") => {
       setAlerts((prev) => [message, ...prev].slice(0, 20));
-      speak(message, priority);
+      speak(message, priority, language.voiceLang);
       if (vibrate && hapticEnabled && navigator.vibrate) {
         navigator.vibrate(200);
       }
       // Design principle: Critical alerts are repeated twice with vibration
       if (priority === "high") {
         setTimeout(() => {
-          speak(message, priority);
+          speak(message, priority, language.voiceLang);
           if (hapticEnabled && navigator.vibrate) navigator.vibrate([300, 100, 300]);
         }, 3000);
       }
     },
-    [speak, hapticEnabled]
+    [speak, hapticEnabled, language.voiceLang]
   );
 
   const analyzeFrame = useCallback(async () => {
