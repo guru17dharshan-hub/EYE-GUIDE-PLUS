@@ -41,6 +41,19 @@ const Setup = () => {
   const [step, setStep] = useState(0);
   const [spokenOnce, setSpokenOnce] = useState<Set<number>>(new Set());
 
+  // If profile is already complete and user lands here, redirect to home
+  useEffect(() => {
+    const stored = localStorage.getItem("eyeguide_profile");
+    if (stored) {
+      try {
+        const p = JSON.parse(stored);
+        if (p.setupComplete) {
+          navigate("/", { replace: true });
+        }
+      } catch {}
+    }
+  }, [navigate]);
+
   // Local input mirrors for each step
   const [nameInput, setNameInput] = useState(profile.name);
   const [homeInput, setHomeInput] = useState(profile.homeAddress);
