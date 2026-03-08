@@ -624,6 +624,20 @@ const Navigate = () => {
           "You can also ask me any question and I will answer."
         );
       }
+      // Language switching
+      else if (lower.includes("switch to") || lower.includes("change language") || lower.includes("speak in")) {
+        const matchedLang = languages.find(l =>
+          lower.includes(l.name.toLowerCase().split(" ")[0]) ||
+          lower.includes(l.shortCode)
+        );
+        if (matchedLang) {
+          setLanguage(matchedLang);
+          speak(`Language changed to ${matchedLang.name}`, "high", matchedLang.voiceLang);
+          addAlert(`🌐 Language: ${matchedLang.name}`);
+        } else {
+          addAlert("Available languages: English, Tamil, Hindi, Telugu, Kannada, Malayalam, Spanish, French, Arabic, Chinese. Say Switch to Tamil, for example.");
+        }
+      }
       // Fallback — treat as a question for AI
       else {
         askAI(command);
