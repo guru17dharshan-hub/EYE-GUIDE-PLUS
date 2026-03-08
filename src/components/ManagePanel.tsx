@@ -183,18 +183,60 @@ const ManagePanel = ({
               </span>
             </div>
 
-            {/* Quick save buttons */}
+            {/* Toggle: use GPS or manual */}
             <div className="flex gap-2">
               <Button
-                variant="outline"
+                variant={!useManualCoords ? "default" : "outline"}
                 size="sm"
                 className="flex-1"
-                onClick={handleSaveAsHome}
-                disabled={!position}
+                onClick={() => setUseManualCoords(false)}
               >
-                <Home className="h-4 w-4 mr-1.5" /> Set as Home
+                <Navigation className="h-4 w-4 mr-1.5" /> Use GPS
+              </Button>
+              <Button
+                variant={useManualCoords ? "default" : "outline"}
+                size="sm"
+                className="flex-1"
+                onClick={() => setUseManualCoords(true)}
+              >
+                <MapPin className="h-4 w-4 mr-1.5" /> Enter Manually
               </Button>
             </div>
+
+            {/* Manual coordinate inputs */}
+            {useManualCoords && (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Latitude"
+                  type="number"
+                  step="any"
+                  value={manualLat}
+                  onChange={(e) => setManualLat(e.target.value)}
+                  aria-label="Latitude"
+                  className="bg-background flex-1"
+                />
+                <Input
+                  placeholder="Longitude"
+                  type="number"
+                  step="any"
+                  value={manualLng}
+                  onChange={(e) => setManualLng(e.target.value)}
+                  aria-label="Longitude"
+                  className="bg-background flex-1"
+                />
+              </div>
+            )}
+
+            {/* Quick save buttons */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={handleSaveAsHome}
+              disabled={!canSaveHome}
+            >
+              <Home className="h-4 w-4 mr-1.5" /> Set {useManualCoords ? "Coordinates" : "Current Location"} as Home
+            </Button>
 
             {/* Save with custom name */}
             <div className="flex gap-2">
@@ -209,7 +251,7 @@ const ManagePanel = ({
               <Button
                 variant="outline"
                 onClick={handleSaveCurrentLocation}
-                disabled={!position || !locName.trim()}
+                disabled={!canSaveLocation}
               >
                 <Save className="h-4 w-4" />
               </Button>
