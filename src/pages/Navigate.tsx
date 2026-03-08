@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, Camera, Eye, Loader2 } from "lucide-react";
+import { AlertTriangle, Camera, Eye, Loader2, MapPin } from "lucide-react";
 import { useSpeech } from "@/hooks/useSpeech";
 import { useVoiceCommand } from "@/hooks/useVoiceCommand";
 import CameraFeed, { CameraFeedRef } from "@/components/CameraFeed";
@@ -11,6 +11,9 @@ import { useMockBusTracker } from "@/hooks/useMockBusTracker";
 import BusTracker from "@/components/BusTracker";
 import { useEmergencyContacts } from "@/hooks/useEmergencyContacts";
 import EmergencyContacts from "@/components/EmergencyContacts";
+import { useGeolocation } from "@/hooks/useGeolocation";
+import { useSavedLocations } from "@/hooks/useSavedLocations";
+import LocationMap from "@/components/LocationMap";
 
 const Navigate = () => {
   const navigate = useNavigate();
@@ -23,6 +26,9 @@ const Navigate = () => {
   const [aiThinking, setAiThinking] = useState(false);
   const { buses } = useMockBusTracker(busTrackingActive);
   const { contacts, addContact, removeContact, callContact, callAll } = useEmergencyContacts();
+  const { position, error: geoError } = useGeolocation(true);
+  const { locations, setHome, addLocation, getHome, getFrequent } = useSavedLocations();
+  const [showMap, setShowMap] = useState(false);
   const autoScanRef = useRef(false);
   const cameraRef = useRef<CameraFeedRef>(null);
   const scanningRef = useRef(false);
@@ -295,17 +301,68 @@ const Navigate = () => {
           addAlert(`Nearby buses: ${busInfo}`);
         }
       }
-      // Go home
-      else if (lower.includes("stop") || lower.includes("go home") || lower.includes("go back") || lower.includes("exit")) {
-        addAlert("Stopping navigation. Going home.");
-        navigate("/");
+      // Location commands
+      else if (lower.includes("where am i") || lower.includes("my location") || lower.includes("current location")) {
+        if (position) {
+          addAlert(`You are at latitude ${position.lat.toFixed(4)}, longitude ${position.lng.toFixed(4)}.`);
+        } else {
+          addAlert("I'm still trying to find your location. Please wait.");
+        }
+      }
+      else if (lower.includes("show map") || lower.includes("open map")) {
+        setShowMap(true);
+        addAlert("Opening the map.");
+      }
+      else if (lower.includes("close map") || lower.includes("hide map")) {
+        setShowMap(false);
+        addAlert("Map closed.");
+      }
+      else if (lower.includes("save home") || lower.includes("set home") || lower.includes("mark home")) {
+        if (position) {
+          setHome(position.lat, position.lng);
+          addAlert("Your current location has been saved as Home.");
+        } else {
+          addAlert("Cannot save home. Location is not available yet.");
+        }
+      }
+      else if (lower.includes("save location") || lower.includes("save this place") || lower.includes("mark location")) {
+        if (position) {
+          addLocation("Saved Place", position.lat, position.lng, "custom");
+          addAlert("Your current location has been saved.");
+        } else {
+          addAlert("Cannot save location. Location is not available yet.");
+        }
+      }
+      else if (lower.includes("my places") || lower.includes("saved places") || lower.includes("saved location") || lower.includes("frequent location")) {
+        const freq = getFrequent();
+        const home = getHome();
+        let msg = "";
+        if (home) msg += `Home is saved. `;
+        if (freq.length > 0) {
+          msg += `You have ${freq.length} saved places: ${freq.map(l => l.name).join(", ")}.`;
+        } else {
+          msg += "No saved places yet. Say Save location to save one.";
+        }
+        addAlert(msg);
+      }
+      // Navigate to home
+      else if (lower.includes("go home") || lower.includes("go back") || lower.includes("exit") || lower.includes("stop")) {
+        const home = getHome();
+        if (home && (lower.includes("navigate home") || lower.includes("take me home") || lower.includes("directions home"))) {
+          addAlert(`Home is at latitude ${home.lat.toFixed(4)}, longitude ${home.lng.toFixed(4)}. Opening map.`);
+          setShowMap(true);
+        } else {
+          addAlert("Stopping navigation. Going home.");
+          navigate("/");
+        }
       }
       // Help
       else if (lower.includes("help") || lower.includes("command") || lower.includes("what can")) {
         addAlert(
           "Available commands: Scan, Find bus, Detect seat, Bus status, " +
           "Auto scan on, Auto scan off, Haptic on, Haptic off, " +
-          "Add contact, My contacts, Call, Remove contact, Emergency, SOS, Go home. " +
+          "Add contact, My contacts, Call, Remove contact, Emergency, SOS, " +
+          "Where am I, Show map, Save home, Save location, My places, Go home. " +
           "You can also ask me any question and I will answer."
         );
       }
@@ -314,7 +371,7 @@ const Navigate = () => {
         askAI(command);
       }
     },
-    [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI, contacts, addContact, removeContact, callContact, extractPhoneFromSpeech]
+    [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI, contacts, addContact, removeContact, callContact, extractPhoneFromSpeech, position, setHome, addLocation, getHome, getFrequent, locations]
   );
 
   // Auto-start continuous voice recognition
@@ -367,6 +424,26 @@ const Navigate = () => {
                   : "Camera active"}
           </span>
         </div>
+      </section>
+
+      {/* Location Map */}
+      {showMap && (
+        <section className="h-[250px] border-t border-border" aria-label="Location map">
+          <LocationMap position={position} savedLocations={locations} error={geoError} />
+        </section>
+      )}
+
+      {/* Location status bar */}
+      <section className="flex items-center gap-2 px-4 py-2 bg-card border-t border-border" aria-label="Location status">
+        <MapPin className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
+        <span className="text-xs text-muted-foreground truncate">
+          {position
+            ? `📍 ${position.lat.toFixed(4)}, ${position.lng.toFixed(4)}`
+            : geoError
+              ? `Location: ${geoError}`
+              : "Locating…"}
+          {!showMap && " — Say \"Show map\" to view"}
+        </span>
       </section>
 
       {/* Bus Tracker */}
