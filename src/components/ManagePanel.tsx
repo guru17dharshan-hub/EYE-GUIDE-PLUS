@@ -1,13 +1,15 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  X, Plus, Trash2, Phone, MapPin, Home, Save, Users, Navigation, BookOpen, Loader2, Database,
+  X, Plus, Trash2, Phone, MapPin, Home, Save, Users, Navigation, BookOpen, Loader2, Database, UserCog,
 } from "lucide-react";
 import { EmergencyContact } from "@/hooks/useEmergencyContacts";
 import { SavedLocation } from "@/hooks/useSavedLocations";
 import { GeoPosition } from "@/hooks/useGeolocation";
+import { getStoredProfile, UserProfile } from "@/hooks/useOnboardingProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
