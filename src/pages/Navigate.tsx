@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, ArrowLeft, Camera, Eye, Vibrate, Volume2, VolumeX, Loader2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Camera, Eye, Vibrate, Volume2, VolumeX, Loader2, Phone } from "lucide-react";
 import { useSpeech } from "@/hooks/useSpeech";
 import { useVoiceCommand } from "@/hooks/useVoiceCommand";
 import CameraFeed, { CameraFeedRef } from "@/components/CameraFeed";
@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMockBusTracker } from "@/hooks/useMockBusTracker";
 import BusTracker from "@/components/BusTracker";
+import { useEmergencyContacts } from "@/hooks/useEmergencyContacts";
+import EmergencyContacts from "@/components/EmergencyContacts";
 
 const Navigate = () => {
   const navigate = useNavigate();
@@ -18,7 +20,9 @@ const Navigate = () => {
   const [aiScanning, setAiScanning] = useState(false);
   const [autoScan, setAutoScan] = useState(false);
   const [busTrackingActive, setBusTrackingActive] = useState(true);
+  const [showContacts, setShowContacts] = useState(false);
   const { buses } = useMockBusTracker(busTrackingActive);
+  const { contacts, addContact, removeContact, callContact, callAll } = useEmergencyContacts();
   const autoScanRef = useRef(false);
   const cameraRef = useRef<CameraFeedRef>(null);
   const scanningRef = useRef(false);
@@ -109,7 +113,13 @@ const Navigate = () => {
   const handleSOS = useCallback(() => {
     addAlert("EMERGENCY SOS ACTIVATED. Contacting emergency services.");
     if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
-  }, [addAlert]);
+    if (contacts.length > 0) {
+      addAlert(`Calling ${contacts[0].name}…`);
+      callAll();
+    } else {
+      addAlert("No emergency contacts saved. Tap 'Manage Contacts' to add one.");
+    }
+  }, [addAlert, contacts, callAll]);
 
   const handleVoiceCommand = useCallback(
     (command: string) => {
@@ -280,7 +290,28 @@ const Navigate = () => {
           <AlertTriangle className="h-8 w-8 mr-2" aria-hidden="true" />
           EMERGENCY SOS
         </Button>
+
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-full focus-ring"
+          onClick={() => setShowContacts(true)}
+          aria-label="Manage emergency contacts"
+        >
+          <Phone className="h-5 w-5 mr-2 text-destructive" aria-hidden="true" />
+          Manage Contacts {contacts.length > 0 && `(${contacts.length})`}
+        </Button>
       </footer>
+
+      {showContacts && (
+        <EmergencyContacts
+          contacts={contacts}
+          onAdd={addContact}
+          onRemove={removeContact}
+          onCall={callContact}
+          onClose={() => setShowContacts(false)}
+        />
+      )}
     </main>
   );
 };
