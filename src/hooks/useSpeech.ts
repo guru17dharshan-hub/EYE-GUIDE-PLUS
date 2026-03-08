@@ -39,17 +39,24 @@ export const useSpeech = () => {
     const voices = window.speechSynthesis.getVoices();
     const fullLang = LANG_TO_BCP47[langPrefix] || langPrefix;
 
-    // 1. Exact BCP 47 match (e.g. "ta-IN")
-    let voice = voices.find(v => v.lang.toLowerCase() === fullLang.toLowerCase());
-    if (voice) return voice;
+    // Helper: check if voice is a Google voice (higher quality, especially for Indian langs)
+    const isGoogle = (v: SpeechSynthesisVoice) =>
+      v.name.toLowerCase().includes("google");
 
-    // 2. Prefix match on the full tag (e.g. "ta")
-    voice = voices.find(v => v.lang.toLowerCase().startsWith(langPrefix.toLowerCase()));
-    if (voice) return voice;
+    // Filter voices matching language
+    const exactMatches = voices.filter(v => v.lang.toLowerCase() === fullLang.toLowerCase());
+    const prefixMatches = voices.filter(v => v.lang.toLowerCase().startsWith(langPrefix.toLowerCase()));
+    const containsMatches = voices.filter(v => v.lang.toLowerCase().includes(langPrefix.toLowerCase()));
 
-    // 3. Contains match
-    voice = voices.find(v => v.lang.toLowerCase().includes(langPrefix.toLowerCase()));
-    return voice || null;
+    // For each match level, prefer Google voices first
+    for (const pool of [exactMatches, prefixMatches, containsMatches]) {
+      if (pool.length === 0) continue;
+      const googleVoice = pool.find(isGoogle);
+      if (googleVoice) return googleVoice;
+      return pool[0]; // fallback to first available
+    }
+
+    return null;
   };
 
   const processQueue = useCallback(() => {
