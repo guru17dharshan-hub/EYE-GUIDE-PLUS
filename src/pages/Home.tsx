@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Navigation, Volume2 } from "lucide-react";
+import { Navigation, Volume2, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useSpeech } from "@/hooks/useSpeech";
 import { useVoiceCommand } from "@/hooks/useVoiceCommand";
 import { getStoredProfile } from "@/hooks/useOnboardingProfile";
@@ -72,6 +73,16 @@ const Home = () => {
         className="flex flex-col items-center gap-4 w-full max-w-sm"
         aria-live="polite"
       >
+        <Button
+          size="xl"
+          variant="nav"
+          className="w-full"
+          onClick={handleStartNavigation}
+          aria-label="Start navigation"
+        >
+          Start Navigation <ArrowRight className="h-6 w-6 ml-2" />
+        </Button>
+
         <div className="flex items-center gap-2 text-primary animate-pulse">
           <Volume2 className="h-8 w-8" aria-hidden="true" />
           <span className="text-lg font-semibold">
