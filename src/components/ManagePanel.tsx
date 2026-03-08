@@ -189,6 +189,14 @@ const ManagePanel = ({
           >
             <BookOpen className="h-4 w-4 mr-1.5" /> Knowledge
           </Button>
+          <Button
+            variant={tab === "profile" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setTab("profile")}
+            className="flex-1"
+          >
+            <UserCog className="h-4 w-4 mr-1.5" /> Profile
+          </Button>
         </div>
 
         {/* Contacts Tab */}
