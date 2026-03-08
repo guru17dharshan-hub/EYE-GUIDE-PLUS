@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, Camera, Eye, Loader2, MapPin, QrCode } from "lucide-react";
+import { AlertTriangle, Camera, Eye, Globe, Loader2, MapPin, QrCode } from "lucide-react";
 import { getProximityVibration, startProximityPulse } from "@/utils/haptics";
 import { useSpeech } from "@/hooks/useSpeech";
 import { useVoiceCommand } from "@/hooks/useVoiceCommand";
@@ -22,10 +22,13 @@ import { useTransitCardScanner } from "@/hooks/useTransitCardScanner";
 import { useFallDetection } from "@/hooks/useFallDetection";
 import { useTripFeedback } from "@/hooks/useTripFeedback";
 import { useEdgeCaseDetection } from "@/hooks/useEdgeCaseDetection";
+import { useLanguage, SUPPORTED_LANGUAGES } from "@/hooks/useLanguage";
 
 const Navigate = () => {
   const navigate = useNavigate();
-  const { speak, isSpeaking } = useSpeech();
+  const { speak, isSpeaking, setLang } = useSpeech();
+  const { language, setLanguage, languages } = useLanguage();
+  const [showLangPicker, setShowLangPicker] = useState(false);
   const [hapticEnabled, setHapticEnabled] = useState(true);
   const [aiScanning, setAiScanning] = useState(false);
   const [autoScan, setAutoScan] = useState(false);
