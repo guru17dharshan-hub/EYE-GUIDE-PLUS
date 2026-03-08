@@ -220,7 +220,7 @@ const Navigate = () => {
         askAI(command);
       }
     },
-    [addAlert, handleSOS, navigate, analyzeFrame, buses]
+    [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI]
   );
 
   // Auto-start continuous voice recognition
