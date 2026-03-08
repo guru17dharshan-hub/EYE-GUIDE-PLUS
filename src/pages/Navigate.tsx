@@ -433,9 +433,61 @@ const Navigate = () => {
         return;
       }
 
-      // ---- Regular commands ----
+      // ---- Tamil commands (check first since Tamil Unicode is unambiguous) ----
+      // "என் பஸ் காண்பி" → Find my bus
+      if (command.includes("என் பஸ்") || command.includes("காண்பி") || command.includes("பஸ் கண்டுபிடி")) {
+        addAlert("பஸ்களைத் தேடுகிறேன்…");
+        analyzeFrame();
+      }
+      // "பஸ் [number] கண்காணி" → Track bus
+      else if (command.includes("கண்காணி") || command.includes("பஸ் நிலை")) {
+        const busNum = command.match(/\d+/)?.[0];
+        if (busNum) {
+          const bus = buses.find(b => b.routeNumber === busNum);
+          if (bus) {
+            addAlert(`பஸ் ${bus.routeNumber} ${bus.destination} நோக்கி, ${bus.distanceMeters} மீட்டர் தொலைவில், ${bus.etaMinutes} நிமிடத்தில் வரும்.`);
+          } else {
+            addAlert(`பஸ் ${busNum} தற்போது அருகில் இல்லை.`);
+          }
+        } else {
+          const busInfo = buses.map(b => `பஸ் ${b.routeNumber} ${b.destination} நோக்கி, ${b.etaMinutes} நிமிடம்`).join(". ");
+          addAlert(busInfo || "அருகில் பஸ்கள் இல்லை.");
+        }
+      }
+      // "அவசரம்" → Emergency SOS
+      else if (command.includes("அவசரம்") || command.includes("உதவி")) {
+        handleSOS();
+      }
+      // "நேவிகேஷன் நிறுத்து" / "நிறுத்து" → Stop navigation
+      else if (command.includes("நிறுத்து") || command.includes("வீட்டுக்கு")) {
+        addAlert("வழிசெலுத்தல் நிறுத்தப்பட்டது. முகப்புக்குச் செல்கிறேன்.");
+        navigate("/");
+      }
+      // "எந்த பஸ்கள் அருகில் உள்ளன?" → Nearby buses
+      else if (command.includes("அருகில்") || command.includes("பஸ்கள்")) {
+        if (buses.length === 0) {
+          addAlert("அருகில் பஸ்கள் இல்லை.");
+        } else {
+          const busInfo = buses.map(b => `பஸ் ${b.routeNumber} ${b.destination} நோக்கி, ${b.distanceMeters} மீட்டர், ${b.etaMinutes} நிமிடம்`).join(". ");
+          addAlert(`அருகிலுள்ள பஸ்கள்: ${busInfo}`);
+        }
+      }
+      // "நான் எங்கே இருக்கிறேன்?" → Where am I
+      else if (command.includes("எங்கே") || command.includes("இருப்பிடம்")) {
+        if (position) {
+          addAlert(`நீங்கள் அட்சரேகை ${position.lat.toFixed(4)}, தீர்க்கரேகை ${position.lng.toFixed(4)} இல் உள்ளீர்கள்.`);
+        } else {
+          addAlert("உங்கள் இருப்பிடத்தைக் கண்டறிகிறேன். காத்திருக்கவும்.");
+        }
+      }
+      // "ஸ்கேன்" → Scan
+      else if (command.includes("ஸ்கேன்") || command.includes("பார்")) {
+        addAlert("சுற்றுப்புறத்தை ஸ்கேன் செய்கிறேன்…");
+        analyzeFrame();
+      }
+      // ---- Regular English commands ----
       // Transit card scanning
-      if (lower.includes("scan card") || lower.includes("scan ticket") || lower.includes("transit card") || lower.includes("scan pass")) {
+      else if (lower.includes("scan card") || lower.includes("scan ticket") || lower.includes("transit card") || lower.includes("scan pass")) {
         if (qrSupported === false) {
           addAlert("QR scanning is not supported on this device. Try Chrome on Android.");
         } else {
