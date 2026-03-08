@@ -3,10 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { Navigation, Volume2 } from "lucide-react";
 import { useSpeech } from "@/hooks/useSpeech";
 import { useVoiceCommand } from "@/hooks/useVoiceCommand";
+import { getStoredProfile } from "@/hooks/useOnboardingProfile";
 
 const Home = () => {
   const navigate = useNavigate();
   const { speak } = useSpeech();
+
+  // Redirect to setup if first time
+  useEffect(() => {
+    const profile = getStoredProfile();
+    if (!profile.setupComplete) {
+      navigate("/setup", { replace: true });
+    }
+  }, [navigate]);
 
   const handleStartNavigation = useCallback(() => {
     speak("Starting navigation mode.");
