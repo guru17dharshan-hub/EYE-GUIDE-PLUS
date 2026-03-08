@@ -113,6 +113,12 @@ const Navigate = () => {
   const handleSOS = useCallback(() => {
     addAlert("EMERGENCY SOS ACTIVATED. Contacting emergency services.");
     if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
+    if (contacts.length > 0) {
+      addAlert(`Calling ${contacts[0].name}…`);
+      callAll();
+    } else {
+      addAlert("No emergency contacts saved. Tap 'Manage Contacts' to add one.");
+    }
   }, [addAlert]);
 
   const handleVoiceCommand = useCallback(
