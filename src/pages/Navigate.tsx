@@ -215,9 +215,9 @@ const Navigate = () => {
           "Add contact, Show contacts, Emergency, SOS, Go home, Help."
         );
       }
-      // Fallback — read back what was heard
+      // Fallback — treat as a question for AI
       else {
-        addAlert(`I heard: ${command}. Say Help for available commands.`);
+        askAI(command);
       }
     },
     [addAlert, handleSOS, navigate, analyzeFrame, buses]
