@@ -145,6 +145,35 @@ const Navigate = () => {
 
   // Bus arrival voice alerts
   // Only alert for buses that are very close (<100m) and arriving within 2 minutes
+  // Progressive haptic pulse for nearest bus
+  const hapticCleanupRef = useRef<(() => void) | null>(null);
+  const closestBusRef = useRef<number>(Infinity);
+
+  useEffect(() => {
+    const closest = buses.reduce((min, b) => Math.min(min, b.distanceMeters), Infinity);
+    closestBusRef.current = closest;
+
+    // Start proximity pulse when a bus is within 500m
+    if (hapticEnabled && closest <= 500 && !hapticCleanupRef.current) {
+      hapticCleanupRef.current = startProximityPulse(
+        () => closestBusRef.current,
+        () => hapticEnabled
+      );
+    }
+    // Stop when no buses nearby or haptic disabled
+    if ((closest > 500 || !hapticEnabled) && hapticCleanupRef.current) {
+      hapticCleanupRef.current();
+      hapticCleanupRef.current = null;
+    }
+
+    return () => {
+      if (hapticCleanupRef.current) {
+        hapticCleanupRef.current();
+        hapticCleanupRef.current = null;
+      }
+    };
+  }, [buses, hapticEnabled]);
+
   const prevBusesRef = useRef<string[]>([]);
   useEffect(() => {
     const imminentBuses = buses.filter(
@@ -158,9 +187,14 @@ const Navigate = () => {
         `🚌 Bus ${bus.routeNumber} to ${bus.destination} is arriving! ${bus.distanceMeters} meters away.`,
         true
       );
+      // Intense haptic for imminent arrival
+      if (hapticEnabled && navigator.vibrate) {
+        const pattern = getProximityVibration(bus.distanceMeters);
+        navigator.vibrate(pattern);
+      }
     });
     prevBusesRef.current = imminentBuses.map((b) => b.id);
-  }, [buses, addAlert]);
+  }, [buses, addAlert, hapticEnabled]);
 
   const handleSOS = useCallback(() => {
     addAlert("EMERGENCY SOS ACTIVATED. Contacting emergency services.");
