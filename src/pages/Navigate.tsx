@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMockBusTracker } from "@/hooks/useMockBusTracker";
 import BusTracker from "@/components/BusTracker";
+import { useBusBoarding } from "@/hooks/useBusBoarding";
 import { useEmergencyContacts } from "@/hooks/useEmergencyContacts";
 import EmergencyContacts from "@/components/EmergencyContacts";
 import { useGeolocation } from "@/hooks/useGeolocation";
