@@ -290,7 +290,28 @@ const Navigate = () => {
           <AlertTriangle className="h-8 w-8 mr-2" aria-hidden="true" />
           EMERGENCY SOS
         </Button>
+
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-full focus-ring"
+          onClick={() => setShowContacts(true)}
+          aria-label="Manage emergency contacts"
+        >
+          <Phone className="h-5 w-5 mr-2 text-destructive" aria-hidden="true" />
+          Manage Contacts {contacts.length > 0 && `(${contacts.length})`}
+        </Button>
       </footer>
+
+      {showContacts && (
+        <EmergencyContacts
+          contacts={contacts}
+          onAdd={addContact}
+          onRemove={removeContact}
+          onCall={callContact}
+          onClose={() => setShowContacts(false)}
+        />
+      )}
     </main>
   );
 };
