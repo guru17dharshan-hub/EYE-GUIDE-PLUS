@@ -228,7 +228,7 @@ const Navigate = () => {
     addAlert("Let me think about that…", false);
     try {
       const { data, error } = await supabase.functions.invoke("ask-ai", {
-        body: { question },
+        body: { question, language: language.shortCode },
       });
       if (error) {
         console.error("Ask AI error:", error);
@@ -244,7 +244,7 @@ const Navigate = () => {
     } finally {
       setAiThinking(false);
     }
-  }, [addAlert]);
+  }, [addAlert, language.shortCode]);
 
   // Auto-scan loop — uses boarding state interval when boarding is active
   useEffect(() => {
