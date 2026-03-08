@@ -117,7 +117,7 @@ const Navigate = () => {
         return;
       }
       if (data?.answer) {
-        addAlert(`🤖 ${data.answer}`);
+        addAlert(`🤖 ${data.answer}`, true, "high");
       }
     } catch (e) {
       console.error("Ask AI error:", e);
