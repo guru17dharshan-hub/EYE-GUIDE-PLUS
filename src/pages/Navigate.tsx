@@ -19,6 +19,7 @@ import LocationMap from "@/components/LocationMap";
 import QuickActions from "@/components/QuickActions";
 import ManagePanel from "@/components/ManagePanel";
 import { useTransitCardScanner } from "@/hooks/useTransitCardScanner";
+import { useFallDetection } from "@/hooks/useFallDetection";
 
 const Navigate = () => {
   const navigate = useNavigate();
