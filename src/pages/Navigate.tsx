@@ -132,7 +132,7 @@ const Navigate = () => {
       boardingState.destinationStop
     ) {
       // We passed the destination
-      const nextBus = buses.find((b) => b.status === "arriving" || b.status === "en-route");
+      const nextBus = buses.find((b) => b.status === "approaching" || b.status === "departed");
       const nextMsg = nextBus
         ? `Next Bus ${nextBus.routeNumber} arrives in ${nextBus.etaMinutes} minutes. Stay seated.`
         : "Stay seated. I'll find the next option.";
