@@ -426,6 +426,26 @@ const Navigate = () => {
         </div>
       </section>
 
+      {/* Location Map */}
+      {showMap && (
+        <section className="h-[250px] border-t border-border" aria-label="Location map">
+          <LocationMap position={position} savedLocations={locations} error={geoError} />
+        </section>
+      )}
+
+      {/* Location status bar */}
+      <section className="flex items-center gap-2 px-4 py-2 bg-card border-t border-border" aria-label="Location status">
+        <MapPin className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
+        <span className="text-xs text-muted-foreground truncate">
+          {position
+            ? `📍 ${position.lat.toFixed(4)}, ${position.lng.toFixed(4)}`
+            : geoError
+              ? `Location: ${geoError}`
+              : "Locating…"}
+          {!showMap && " — Say \"Show map\" to view"}
+        </span>
+      </section>
+
       {/* Bus Tracker */}
       <section className="p-4 bg-card border-t border-border" aria-label="Nearby buses">
         <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">
