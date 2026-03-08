@@ -643,7 +643,7 @@ const Navigate = () => {
         askAI(command);
       }
     },
-    [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI, contacts, addContact, removeContact, callContact, extractPhoneFromSpeech, position, setHome, addLocation, getHome, getFrequent, locations, scanFromDataUrl, qrSupported, fallDetected, confirmSafe, setDestination, isFeedbackActive, processFeedbackInput, cancelFeedback, endTrip]
+    [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI, contacts, addContact, removeContact, callContact, extractPhoneFromSpeech, position, setHome, addLocation, getHome, getFrequent, locations, scanFromDataUrl, qrSupported, fallDetected, confirmSafe, setDestination, isFeedbackActive, processFeedbackInput, cancelFeedback, endTrip, languages, setLanguage, speak]
   );
 
   // Sync TTS language
