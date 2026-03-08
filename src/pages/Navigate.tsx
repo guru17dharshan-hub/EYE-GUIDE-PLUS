@@ -8,6 +8,8 @@ import CameraFeed, { CameraFeedRef } from "@/components/CameraFeed";
 import AlertLog from "@/components/AlertLog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useMockBusTracker } from "@/hooks/useMockBusTracker";
+import BusTracker from "@/components/BusTracker";
 
 const Navigate = () => {
   const navigate = useNavigate();
@@ -15,6 +17,8 @@ const Navigate = () => {
   const [hapticEnabled, setHapticEnabled] = useState(true);
   const [aiScanning, setAiScanning] = useState(false);
   const [autoScan, setAutoScan] = useState(false);
+  const [busTrackingActive, setBusTrackingActive] = useState(true);
+  const { buses } = useMockBusTracker(busTrackingActive);
   const autoScanRef = useRef(false);
   const cameraRef = useRef<CameraFeedRef>(null);
   const scanningRef = useRef(false);
@@ -85,6 +89,22 @@ const Navigate = () => {
 
     return () => clearInterval(interval);
   }, [autoScan, analyzeFrame]);
+
+  // Bus arrival voice alerts
+  const prevBusesRef = useRef<string[]>([]);
+  useEffect(() => {
+    const arrivingNow = buses.filter((b) => b.status === "arriving");
+    const newArrivals = arrivingNow.filter(
+      (b) => !prevBusesRef.current.includes(b.id)
+    );
+    newArrivals.forEach((bus) => {
+      addAlert(
+        `🚌 Bus ${bus.routeNumber} to ${bus.destination} is arriving! ${bus.distanceMeters} meters away.`,
+        true
+      );
+    });
+    prevBusesRef.current = arrivingNow.map((b) => b.id);
+  }, [buses, addAlert]);
 
   const handleSOS = useCallback(() => {
     addAlert("EMERGENCY SOS ACTIVATED. Contacting emergency services.");
@@ -164,6 +184,14 @@ const Navigate = () => {
                 : "Camera active — scanning"}
           </span>
         </div>
+      </section>
+
+      {/* Bus Tracker */}
+      <section className="p-4 bg-card border-t border-border" aria-label="Nearby buses">
+        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">
+          🚌 Nearby Buses
+        </h2>
+        <BusTracker buses={buses} />
       </section>
 
       {/* Alert Log */}
