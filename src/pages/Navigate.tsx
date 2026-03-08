@@ -570,10 +570,28 @@ const Navigate = () => {
 
       {/* Bus Tracker */}
       <section className="p-4 bg-card border-t border-border" aria-label="Nearby buses">
-        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-2">
-          🚌 Nearby Buses
-        </h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
+            🚌 Nearby Buses
+          </h2>
+          <button
+            onClick={() => handleVoiceCommand("scan card")}
+            className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+            aria-label="Scan transit card"
+          >
+            <QrCode className="h-3.5 w-3.5" />
+            Scan Card
+          </button>
+        </div>
         <BusTracker buses={buses} />
+        {lastScan && (
+          <div className="mt-2 p-2 rounded-lg bg-green-500/10 border border-green-500/30 flex items-center justify-between">
+            <p className="text-xs text-foreground">
+              ✅ Last scan: <span className="font-mono">{lastScan.rawValue.slice(0, 40)}</span>
+            </p>
+            <button onClick={clearScan} className="text-xs text-muted-foreground hover:text-foreground">✕</button>
+          </div>
+        )}
       </section>
 
       {/* Quick Action Buttons */}
