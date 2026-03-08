@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useMockBusTracker } from "@/hooks/useMockBusTracker";
 import BusTracker from "@/components/BusTracker";
+import { useEmergencyContacts } from "@/hooks/useEmergencyContacts";
+import EmergencyContacts from "@/components/EmergencyContacts";
 
 const Navigate = () => {
   const navigate = useNavigate();
