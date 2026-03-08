@@ -435,7 +435,7 @@ const Navigate = () => {
       // Help
       else if (lower.includes("help") || lower.includes("command") || lower.includes("what can")) {
         addAlert(
-          "Available commands: Scan, Find bus, Detect seat, Bus status, " +
+          "Available commands: Scan, Find bus, Detect seat, Bus status, Scan card, " +
           "Auto scan on, Auto scan off, Haptic on, Haptic off, " +
           "Add contact, My contacts, Call, Remove contact, Emergency, SOS, " +
           "Where am I, Show map, Save home, Save location, My places, Go home. " +
