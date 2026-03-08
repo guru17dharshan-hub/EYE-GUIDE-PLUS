@@ -14,6 +14,7 @@ import EmergencyContacts from "@/components/EmergencyContacts";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useSavedLocations } from "@/hooks/useSavedLocations";
 import LocationMap from "@/components/LocationMap";
+import QuickActions from "@/components/QuickActions";
 
 const Navigate = () => {
   const navigate = useNavigate();
