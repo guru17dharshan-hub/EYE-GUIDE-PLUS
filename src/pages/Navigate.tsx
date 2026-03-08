@@ -301,17 +301,68 @@ const Navigate = () => {
           addAlert(`Nearby buses: ${busInfo}`);
         }
       }
-      // Go home
-      else if (lower.includes("stop") || lower.includes("go home") || lower.includes("go back") || lower.includes("exit")) {
-        addAlert("Stopping navigation. Going home.");
-        navigate("/");
+      // Location commands
+      else if (lower.includes("where am i") || lower.includes("my location") || lower.includes("current location")) {
+        if (position) {
+          addAlert(`You are at latitude ${position.lat.toFixed(4)}, longitude ${position.lng.toFixed(4)}.`);
+        } else {
+          addAlert("I'm still trying to find your location. Please wait.");
+        }
+      }
+      else if (lower.includes("show map") || lower.includes("open map")) {
+        setShowMap(true);
+        addAlert("Opening the map.");
+      }
+      else if (lower.includes("close map") || lower.includes("hide map")) {
+        setShowMap(false);
+        addAlert("Map closed.");
+      }
+      else if (lower.includes("save home") || lower.includes("set home") || lower.includes("mark home")) {
+        if (position) {
+          setHome(position.lat, position.lng);
+          addAlert("Your current location has been saved as Home.");
+        } else {
+          addAlert("Cannot save home. Location is not available yet.");
+        }
+      }
+      else if (lower.includes("save location") || lower.includes("save this place") || lower.includes("mark location")) {
+        if (position) {
+          addLocation("Saved Place", position.lat, position.lng, "custom");
+          addAlert("Your current location has been saved.");
+        } else {
+          addAlert("Cannot save location. Location is not available yet.");
+        }
+      }
+      else if (lower.includes("my places") || lower.includes("saved places") || lower.includes("saved location") || lower.includes("frequent location")) {
+        const freq = getFrequent();
+        const home = getHome();
+        let msg = "";
+        if (home) msg += `Home is saved. `;
+        if (freq.length > 0) {
+          msg += `You have ${freq.length} saved places: ${freq.map(l => l.name).join(", ")}.`;
+        } else {
+          msg += "No saved places yet. Say Save location to save one.";
+        }
+        addAlert(msg);
+      }
+      // Navigate to home
+      else if (lower.includes("go home") || lower.includes("go back") || lower.includes("exit") || lower.includes("stop")) {
+        const home = getHome();
+        if (home && (lower.includes("navigate home") || lower.includes("take me home") || lower.includes("directions home"))) {
+          addAlert(`Home is at latitude ${home.lat.toFixed(4)}, longitude ${home.lng.toFixed(4)}. Opening map.`);
+          setShowMap(true);
+        } else {
+          addAlert("Stopping navigation. Going home.");
+          navigate("/");
+        }
       }
       // Help
       else if (lower.includes("help") || lower.includes("command") || lower.includes("what can")) {
         addAlert(
           "Available commands: Scan, Find bus, Detect seat, Bus status, " +
           "Auto scan on, Auto scan off, Haptic on, Haptic off, " +
-          "Add contact, My contacts, Call, Remove contact, Emergency, SOS, Go home. " +
+          "Add contact, My contacts, Call, Remove contact, Emergency, SOS, " +
+          "Where am I, Show map, Save home, Save location, My places, Go home. " +
           "You can also ask me any question and I will answer."
         );
       }
