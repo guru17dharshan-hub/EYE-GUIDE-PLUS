@@ -57,7 +57,7 @@ const Navigate = () => {
   );
 
   const analyzeFrame = useCallback(async () => {
-    if (scanningRef.current) return;
+    if (scanningRef.current || aiThinking) return;
     const frame = cameraRef.current?.captureFrame();
     if (!frame) return;
 
