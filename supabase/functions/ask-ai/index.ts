@@ -29,6 +29,12 @@ async function getEmbedding(text: string, apiKey: string): Promise<number[]> {
   return data.data[0].embedding;
 }
 
+const LANG_NAMES: Record<string, string> = {
+  ta: "Tamil", hi: "Hindi", te: "Telugu",
+  kn: "Kannada", ml: "Malayalam", es: "Spanish",
+  fr: "French", ar: "Arabic", zh: "Chinese",
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -48,17 +54,11 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Language mapping for stronger instruction
-    const LANG_NAMES: Record<string, string> = {
-      ta: "Tamil (தமிழ்)", hi: "Hindi (हिन्दी)", te: "Telugu (తెలుగు)",
-      kn: "Kannada (ಕನ್ನಡ)", ml: "Malayalam (മലയാളം)", es: "Spanish",
-      fr: "French", ar: "Arabic (العربية)", zh: "Chinese (中文)",
-    };
     const langCode = language || "en";
     const langName = LANG_NAMES[langCode] || null;
-    const langInstruction = langName
-      ? `\n\nCRITICAL LANGUAGE REQUIREMENT: You MUST respond ENTIRELY in ${langName}. Every single word of your response must be in ${langName}. Do NOT use English at all. This is mandatory.`
-      : "";
+    const isNonEnglish = langName != null;
+
+    console.log(`ask-ai: question="${question}", language="${langCode}", langName="${langName}"`);
 
     // --- RAG: Retrieve relevant knowledge ---
     let contextText = "";
@@ -90,31 +90,32 @@ serve(async (req) => {
       console.error("RAG retrieval failed (falling back to base AI):", ragError);
     }
 
-    // --- Generate answer with or without context ---
-    const systemPrompt = contextText
-      ? `You are a helpful voice assistant for visually impaired users. You answer questions clearly and concisely in 1-3 short sentences, optimized for being read aloud by text-to-speech.
+    // Build system prompt with language as the FIRST and LAST instruction
+    const langDirective = isNonEnglish
+      ? `YOU MUST RESPOND ONLY IN ${langName.toUpperCase()}. Every word must be in ${langName}. Do not use English. Do not mix languages.\n\n`
+      : "";
 
-You have access to a knowledge base with relevant information. Use the following context to provide accurate answers. If the context doesn't cover the question, answer from your general knowledge but mention you're not sure.
+    const langReminder = isNonEnglish
+      ? `\n\nREMINDER: Your entire response MUST be in ${langName}. Not English. ${langName} only.`
+      : "";
 
-KNOWLEDGE BASE CONTEXT:
-${contextText}
+    const contextBlock = contextText
+      ? `\nYou have a knowledge base. Use this context if relevant:\n${contextText}\n`
+      : "";
 
-Key rules:
-- Keep answers brief and spoken-friendly (no bullet points, no markdown, no lists)
-- Use simple, clear language
-- Prioritize information from the knowledge base when available
-- If asked about directions or navigation, give clear spatial guidance
-- Be warm and reassuring in tone
-- Never say "I can see" or reference visual content unless given an image${langInstruction}`
-      : `You are a helpful voice assistant for visually impaired users. You answer questions clearly and concisely in 1-3 short sentences, optimized for being read aloud by text-to-speech. 
-
-Key rules:
+    const systemPrompt = `${langDirective}You are a helpful voice assistant for visually impaired users. You answer questions clearly and concisely in 1-3 short sentences, optimized for text-to-speech.
+${contextBlock}
+Rules:
 - Keep answers brief and spoken-friendly (no bullet points, no markdown, no lists)
 - Use simple, clear language
 - If asked about directions or navigation, give clear spatial guidance
-- If asked about time, weather, general knowledge — answer directly
 - Be warm and reassuring in tone
-- Never say "I can see" or reference visual content unless given an image${langInstruction}`;
+- Never say "I can see" or reference visual content unless given an image${langReminder}`;
+
+    // Wrap user message with language instruction too
+    const userContent = isNonEnglish
+      ? `[Respond in ${langName} only] ${question}`
+      : question;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -128,7 +129,7 @@ Key rules:
           model: "google/gemini-3-flash-preview",
           messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: question },
+            { role: "user", content: userContent },
           ],
         }),
       }
@@ -157,7 +158,9 @@ Key rules:
 
     const data = await response.json();
     const answer =
-      data.choices?.[0]?.message?.content || "Sorry, I could not find an answer.";
+      data.choices?.[0]?.message?.content || (isNonEnglish ? "மன்னிக்கவும், பதில் கிடைக்கவில்லை." : "Sorry, I could not find an answer.");
+
+    console.log(`ask-ai response (${langCode}): ${answer.substring(0, 100)}...`);
 
     return new Response(
       JSON.stringify({ answer, has_context: contextText.length > 0 }),
