@@ -972,7 +972,7 @@ const Navigate = () => {
       {/* Minimal status footer */}
       <footer className="p-3 bg-background border-t border-border text-center" aria-live="polite">
         <p className="text-xs text-muted-foreground">
-          🎙️ Voice-only mode — Ask anything or say "Help" • {autoScan ? "Auto-scan ON" : "Auto-scan OFF"} • Haptic {hapticEnabled ? "ON" : "OFF"}
+          🎙️ Voice-only mode — {language.name} • Ask anything or say "Help" • {autoScan ? "Auto-scan ON" : "Auto-scan OFF"} • Haptic {hapticEnabled ? "ON" : "OFF"}
         </p>
       </footer>
 
