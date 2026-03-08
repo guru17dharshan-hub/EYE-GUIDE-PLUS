@@ -1,18 +1,55 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useEffect } from "react";
+
+// Map short voice-lang prefixes to full BCP 47 tags for better TTS matching
+const LANG_TO_BCP47: Record<string, string> = {
+  en: "en-US",
+  ta: "ta-IN",
+  hi: "hi-IN",
+  te: "te-IN",
+  kn: "kn-IN",
+  ml: "ml-IN",
+  es: "es-ES",
+  fr: "fr-FR",
+  ar: "ar-SA",
+  zh: "zh-CN",
+};
 
 export const useSpeech = () => {
   const speakingRef = useRef(false);
   const queueRef = useRef<{ text: string; lang?: string }[]>([]);
   const currentLangRef = useRef("en");
+  const voicesLoadedRef = useRef(false);
+
+  // Preload voices — some browsers load them asynchronously
+  useEffect(() => {
+    const loadVoices = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        voicesLoadedRef.current = true;
+      }
+    };
+
+    if ("speechSynthesis" in window) {
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  }, []);
 
   const findVoice = (langPrefix: string): SpeechSynthesisVoice | null => {
     const voices = window.speechSynthesis.getVoices();
-    // Exact match first, then prefix match
-    return (
-      voices.find(v => v.lang.toLowerCase().startsWith(langPrefix.toLowerCase())) ||
-      voices.find(v => v.lang.toLowerCase().includes(langPrefix.toLowerCase())) ||
-      null
-    );
+    const fullLang = LANG_TO_BCP47[langPrefix] || langPrefix;
+
+    // 1. Exact BCP 47 match (e.g. "ta-IN")
+    let voice = voices.find(v => v.lang.toLowerCase() === fullLang.toLowerCase());
+    if (voice) return voice;
+
+    // 2. Prefix match on the full tag (e.g. "ta")
+    voice = voices.find(v => v.lang.toLowerCase().startsWith(langPrefix.toLowerCase()));
+    if (voice) return voice;
+
+    // 3. Contains match
+    voice = voices.find(v => v.lang.toLowerCase().includes(langPrefix.toLowerCase()));
+    return voice || null;
   };
 
   const processQueue = useCallback(() => {
@@ -28,7 +65,8 @@ export const useSpeech = () => {
     utterance.volume = 1;
 
     const lang = item.lang || currentLangRef.current;
-    utterance.lang = lang;
+    // Set the full BCP 47 tag so the browser picks the right voice
+    utterance.lang = LANG_TO_BCP47[lang] || lang;
 
     // Try to find a matching voice
     const voice = findVoice(lang);
