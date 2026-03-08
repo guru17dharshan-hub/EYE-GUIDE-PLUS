@@ -46,9 +46,9 @@ const Navigate = () => {
   ]);
 
   const addAlert = useCallback(
-    (message: string, vibrate = true) => {
+    (message: string, vibrate = true, priority: "normal" | "high" = "normal") => {
       setAlerts((prev) => [message, ...prev].slice(0, 20));
-      speak(message);
+      speak(message, priority);
       if (vibrate && hapticEnabled && navigator.vibrate) {
         navigator.vibrate(200);
       }
