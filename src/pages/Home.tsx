@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Navigation, Volume2 } from "lucide-react";
+import { Navigation, Volume2, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useSpeech } from "@/hooks/useSpeech";
 import { useVoiceCommand } from "@/hooks/useVoiceCommand";
 import { getStoredProfile } from "@/hooks/useOnboardingProfile";
