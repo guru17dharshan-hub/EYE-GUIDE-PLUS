@@ -127,19 +127,20 @@ const Navigate = () => {
     }
   }, [addAlert]);
 
-  // Auto-scan loop
+  // Auto-scan loop — uses boarding state interval when boarding is active
   useEffect(() => {
     autoScanRef.current = autoScan;
-    if (!autoScan) return;
+    const shouldAutoScan = autoScan || isBoarding;
+    if (!shouldAutoScan) return;
 
     const interval = setInterval(() => {
-      if (autoScanRef.current && !scanningRef.current) {
+      if ((autoScanRef.current || isBoarding) && !scanningRef.current) {
         analyzeFrame();
       }
-    }, 8000);
+    }, isBoarding ? boardingState.autoScanInterval : 8000);
 
     return () => clearInterval(interval);
-  }, [autoScan, analyzeFrame]);
+  }, [autoScan, analyzeFrame, isBoarding, boardingState.autoScanInterval]);
 
   // Bus arrival voice alerts
   const prevBusesRef = useRef<string[]>([]);
