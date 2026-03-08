@@ -4,16 +4,19 @@ export const useVoiceCommand = (
   onCommand: (command: string) => void,
   autoStart = false,
   isSpeaking?: () => boolean,
-  recognitionLang = "en-US"
+  recognitionLang = "en-US",
+  onTranscriptRaw?: (transcript: string) => void
 ) => {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
   const shouldListenRef = useRef(autoStart);
   const onCommandRef = useRef(onCommand);
   const isSpeakingRef = useRef(isSpeaking);
+  const onTranscriptRawRef = useRef(onTranscriptRaw);
   const langRef = useRef(recognitionLang);
   onCommandRef.current = onCommand;
   isSpeakingRef.current = isSpeaking;
+  onTranscriptRawRef.current = onTranscriptRaw;
   langRef.current = recognitionLang;
 
   const createRecognition = useCallback(() => {
@@ -37,7 +40,6 @@ export const useVoiceCommand = (
       if (shouldListenRef.current) {
         setTimeout(() => {
           try {
-            // Recreate with latest lang
             const r = createRecognition();
             if (r) {
               recognitionRef.current = r;
@@ -64,6 +66,9 @@ export const useVoiceCommand = (
         console.log("Ignored mic input during speech:", transcript);
         return;
       }
+
+      // Notify raw transcript for auto-detection before processing command
+      onTranscriptRawRef.current?.(transcript);
 
       onCommandRef.current(transcript);
     };
