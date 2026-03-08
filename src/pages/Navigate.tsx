@@ -114,9 +114,32 @@ const Navigate = () => {
     // Trigger feedback when trip ends (reset from seated/post_exit)
     if (boardingState.phase === "idle" && prevPhaseRef.current === "post_exit") {
       endTrip();
+      clearMissedStop();
     }
     prevPhaseRef.current = boardingState.phase;
-  }, [boardingState.phase, boardingState.busRoute, startTrip, endTrip]);
+  }, [boardingState.phase, boardingState.busRoute, startTrip, endTrip, clearMissedStop]);
+
+  // Missed stop detection: if we were approaching destination and now we're not
+  const wasApproachingRef = useRef(false);
+  useEffect(() => {
+    if (boardingState.isApproachingDestination) {
+      wasApproachingRef.current = true;
+    }
+    if (
+      wasApproachingRef.current &&
+      !boardingState.isApproachingDestination &&
+      boardingState.phase === "seated" &&
+      boardingState.destinationStop
+    ) {
+      // We passed the destination
+      const nextBus = buses.find((b) => b.status === "arriving" || b.status === "en-route");
+      const nextMsg = nextBus
+        ? `Next Bus ${nextBus.routeNumber} arrives in ${nextBus.etaMinutes} minutes. Stay seated.`
+        : "Stay seated. I'll find the next option.";
+      triggerMissedStop(boardingState.destinationStop, nextMsg);
+      wasApproachingRef.current = false;
+    }
+  }, [boardingState.isApproachingDestination, boardingState.phase, boardingState.destinationStop, buses, triggerMissedStop]);
 
   const addAlert = useCallback(
     (message: string, vibrate = true, priority: "normal" | "high" = "normal") => {
