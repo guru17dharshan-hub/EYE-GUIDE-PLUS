@@ -67,7 +67,12 @@ export const getBoardingHaptic = (phase: string): number[] => {
       return [100, 50, 100];
     case "seated":
       return [100];
+    case "exiting":
+      return [400, 150, 400, 150, 400]; // Urgent — prepare to move
+    case "post_exit":
+      return [200, 100, 200]; // Confirmation pulse
     default:
       return [150];
   }
+};
 };
