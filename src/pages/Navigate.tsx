@@ -26,6 +26,9 @@ const Navigate = () => {
   const autoScanRef = useRef(false);
   const cameraRef = useRef<CameraFeedRef>(null);
   const scanningRef = useRef(false);
+  // Voice contact addition state machine: "idle" | "awaiting_name" | "awaiting_phone"
+  const voiceContactModeRef = useRef<"idle" | "awaiting_name" | "awaiting_phone">("idle");
+  const pendingContactNameRef = useRef("");
   const [alerts, setAlerts] = useState<string[]>([
     "Navigation active. Voice control enabled.",
   ]);
