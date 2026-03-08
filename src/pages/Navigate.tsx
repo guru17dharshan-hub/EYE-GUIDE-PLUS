@@ -301,6 +301,16 @@ const Navigate = () => {
       const lower = command.toLowerCase();
       setVoiceTranscripts((prev) => [`🎙️ ${command}`, ...prev].slice(0, 10));
 
+      // ---- Trip feedback state machine (highest priority) ----
+      if (isFeedbackActive) {
+        if (lower.includes("cancel") || lower.includes("skip feedback")) {
+          cancelFeedback();
+          return;
+        }
+        const handled = processFeedbackInput(command);
+        if (handled) return;
+      }
+
       // ---- Voice contact state machine ----
       if (voiceContactModeRef.current === "awaiting_name") {
         if (lower.includes("cancel") || lower.includes("never mind")) {
