@@ -259,10 +259,12 @@ const Navigate = () => {
   }, [autoScan, analyzeFrame, isBoarding, boardingState.autoScanInterval]);
 
   // Bus arrival voice alerts
-  // Only alert for buses that are very close (<100m) and arriving within 2 minutes
-  // Progressive haptic pulse for nearest bus
+  // Auto-announce only at 3-minute intervals when a bus is very close (<100m, arriving)
+  // User can triple-tap to hear bus status on demand
   const hapticCleanupRef = useRef<(() => void) | null>(null);
   const closestBusRef = useRef<number>(Infinity);
+  const lastBusAnnouncementRef = useRef<number>(0);
+  const BUS_ANNOUNCE_INTERVAL = 180000; // 3 minutes
 
   useEffect(() => {
     const closest = buses.reduce((min, b) => Math.min(min, b.distanceMeters), Infinity);
@@ -275,7 +277,6 @@ const Navigate = () => {
         () => hapticEnabled
       );
     }
-    // Stop when no buses nearby or haptic disabled
     if ((closest > 500 || !hapticEnabled) && hapticCleanupRef.current) {
       hapticCleanupRef.current();
       hapticCleanupRef.current = null;
@@ -289,27 +290,59 @@ const Navigate = () => {
     };
   }, [buses, hapticEnabled]);
 
-  const prevBusesRef = useRef<string[]>([]);
+  // Periodic auto-announce (every 3 min) for imminent buses only
   useEffect(() => {
-    const imminentBuses = buses.filter(
-      (b) => b.status === "arriving" && b.distanceMeters < 100 && b.etaMinutes < 2
-    );
-    const newArrivals = imminentBuses.filter(
-      (b) => !prevBusesRef.current.includes(b.id)
-    );
-    newArrivals.forEach((bus) => {
-      addAlert(
-        `🚌 Bus ${bus.routeNumber} to ${bus.destination} is arriving! ${bus.distanceMeters} meters away.`,
-        true
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const imminentBuses = buses.filter(
+        (b) => b.status === "arriving" && b.distanceMeters < 100 && b.etaMinutes <= 1
       );
-      // Intense haptic for imminent arrival
-      if (hapticEnabled && navigator.vibrate) {
-        const pattern = getProximityVibration(bus.distanceMeters);
-        navigator.vibrate(pattern);
+      if (imminentBuses.length > 0 && now - lastBusAnnouncementRef.current >= BUS_ANNOUNCE_INTERVAL) {
+        lastBusAnnouncementRef.current = now;
+        const bus = imminentBuses[0];
+        addAlert(
+          `🚌 Bus ${bus.routeNumber} to ${bus.destination} is arriving! ${bus.distanceMeters} meters away.`,
+          true
+        );
+        if (hapticEnabled && navigator.vibrate) {
+          navigator.vibrate(getProximityVibration(bus.distanceMeters));
+        }
       }
-    });
-    prevBusesRef.current = imminentBuses.map((b) => b.id);
+    }, 10000); // check every 10s but only announce per interval
+    return () => clearInterval(interval);
   }, [buses, addAlert, hapticEnabled]);
+
+  // Triple-tap to announce bus status on demand
+  const tapTimestampsRef = useRef<number[]>([]);
+  const announceBusStatus = useCallback(() => {
+    if (buses.length === 0) {
+      speak("No buses nearby at the moment.");
+      return;
+    }
+    const arriving = buses.filter((b) => b.status === "arriving");
+    if (arriving.length > 0) {
+      const msg = arriving
+        .map((b) => `Bus ${b.routeNumber} to ${b.destination}, ${b.distanceMeters} meters away, arriving in ${b.etaMinutes} minute${b.etaMinutes !== 1 ? "s" : ""}`)
+        .join(". ");
+      speak(msg);
+      addAlert(`🚌 ${msg}`);
+    } else {
+      const closest = [...buses].sort((a, b) => a.distanceMeters - b.distanceMeters)[0];
+      speak(`Nearest bus: ${closest.routeNumber} to ${closest.destination}, ${closest.distanceMeters} meters away, arriving in ${closest.etaMinutes} minutes.`);
+    }
+    lastBusAnnouncementRef.current = Date.now();
+  }, [buses, speak, addAlert]);
+
+  const handleTripleTap = useCallback(() => {
+    const now = Date.now();
+    tapTimestampsRef.current.push(now);
+    // Keep only taps within last 1 second
+    tapTimestampsRef.current = tapTimestampsRef.current.filter((t) => now - t < 1000);
+    if (tapTimestampsRef.current.length >= 3) {
+      tapTimestampsRef.current = [];
+      announceBusStatus();
+    }
+  }, [announceBusStatus]);
 
   const handleSOS = useCallback(() => {
     addAlert("EMERGENCY SOS ACTIVATED. Contacting emergency services.");
@@ -613,6 +646,8 @@ const Navigate = () => {
       className="flex min-h-screen flex-col"
       role="main"
       aria-label="Navigation Screen"
+      onTouchStart={handleTripleTap}
+      onClick={handleTripleTap}
     >
       {/* Header */}
       <header className="flex items-center justify-between p-4 border-b border-border bg-card">
