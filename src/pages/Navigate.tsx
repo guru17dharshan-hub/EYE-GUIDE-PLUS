@@ -119,7 +119,7 @@ const Navigate = () => {
     } else {
       addAlert("No emergency contacts saved. Tap 'Manage Contacts' to add one.");
     }
-  }, [addAlert]);
+  }, [addAlert, contacts, callAll]);
 
   const handleVoiceCommand = useCallback(
     (command: string) => {
