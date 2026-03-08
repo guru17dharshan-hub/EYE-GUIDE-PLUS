@@ -20,6 +20,7 @@ const Navigate = () => {
   const [autoScan, setAutoScan] = useState(false);
   const [busTrackingActive, setBusTrackingActive] = useState(true);
   const [showContacts, setShowContacts] = useState(false);
+  const [aiThinking, setAiThinking] = useState(false);
   const { buses } = useMockBusTracker(busTrackingActive);
   const { contacts, addContact, removeContact, callContact, callAll } = useEmergencyContacts();
   const autoScanRef = useRef(false);
