@@ -223,12 +223,7 @@ const Setup = () => {
     >
       {/* Header */}
       <div className="text-center space-y-2">
-        <div className="flex items-center justify-center gap-2">
-          <Navigation className="h-10 w-10 text-primary" aria-hidden="true" />
-        </div>
-        <h1 className="text-3xl font-black tracking-tight text-foreground">
-          EyeGuide<span className="text-primary">+</span>
-        </h1>
+        <img src={logo} alt="EyeGuide+ Logo" className="h-24 w-auto mx-auto" />
         <p className="text-sm text-muted-foreground">
           Step {step + 1} of {STEPS.length}
         </p>
