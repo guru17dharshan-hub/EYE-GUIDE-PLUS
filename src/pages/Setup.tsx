@@ -226,7 +226,7 @@ const Setup = () => {
           <Navigation className="h-10 w-10 text-primary" aria-hidden="true" />
         </div>
         <h1 className="text-3xl font-black tracking-tight text-foreground">
-          EyeGuide<span className="text-primary">+</span> Setup
+          EyeGuide<span className="text-primary">+</span>
         </h1>
         <p className="text-sm text-muted-foreground">
           Step {step + 1} of {STEPS.length}
