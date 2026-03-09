@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Navigation, ChevronRight, ChevronLeft, Check } from "lucide-react";
+import { ChevronRight, ChevronLeft, Check } from "lucide-react";
+import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSpeech } from "@/hooks/useSpeech";
@@ -222,12 +223,7 @@ const Setup = () => {
     >
       {/* Header */}
       <div className="text-center space-y-2">
-        <div className="flex items-center justify-center gap-2">
-          <Navigation className="h-10 w-10 text-primary" aria-hidden="true" />
-        </div>
-        <h1 className="text-3xl font-black tracking-tight text-foreground">
-          EyeGuide<span className="text-primary">+</span>
-        </h1>
+        <img src={logo} alt="EyeGuide+ Logo" className="h-24 w-auto mx-auto" />
         <p className="text-sm text-muted-foreground">
           Step {step + 1} of {STEPS.length}
         </p>

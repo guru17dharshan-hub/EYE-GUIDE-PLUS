@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Navigation, Volume2, ArrowRight } from "lucide-react";
+import { Volume2, ArrowRight } from "lucide-react";
+import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { useSpeech } from "@/hooks/useSpeech";
 import { useVoiceCommand } from "@/hooks/useVoiceCommand";
@@ -58,12 +59,7 @@ const Home = () => {
       aria-label="EyeGuide Plus Home Screen"
     >
       <div className="text-center space-y-4">
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <Navigation className="h-12 w-12 text-primary" aria-hidden="true" />
-        </div>
-        <h1 className="text-5xl font-black tracking-tight text-foreground">
-          EyeGuide<span className="text-primary">+</span>
-        </h1>
+        <img src={logo} alt="EyeGuide+ Logo" className="h-32 w-auto mx-auto" />
         <p className="text-xl text-muted-foreground max-w-md" aria-live="polite">
           Your AI-powered navigation assistant for visually impaired users.
         </p>
