@@ -755,7 +755,16 @@ const Navigate = () => {
   }, [autoDetectAndSwitch, addAlert, speak]);
 
   // Auto-start continuous voice recognition with selected language
-  const { isListening } = useVoiceCommand(handleVoiceCommand, true, isSpeaking, language.code, handleTranscriptRaw);
+  const { isListening, startListening, stopListening } = useVoiceCommand(handleVoiceCommand, micEnabled, isSpeaking, language.code, handleTranscriptRaw);
+
+  // Sync mic state with voice recognition
+  useEffect(() => {
+    if (micEnabled) {
+      startListening();
+    } else {
+      stopListening();
+    }
+  }, [micEnabled, startListening, stopListening]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
