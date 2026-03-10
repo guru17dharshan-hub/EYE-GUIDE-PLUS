@@ -42,6 +42,7 @@ interface QuickActionsProps {
   hapticEnabled: boolean;
   showMap: boolean;
   cameraOn: boolean;
+  micEnabled: boolean;
   onOpenManage?: () => void;
 }
 
