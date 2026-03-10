@@ -22,6 +22,7 @@ interface QuickActionsProps {
   autoScan: boolean;
   hapticEnabled: boolean;
   showMap: boolean;
+  cameraOn: boolean;
   onOpenManage?: () => void;
 }
 
