@@ -224,10 +224,10 @@ const Navigate = () => {
   const AI_COOLDOWN_MS = 4000; // 4 second cooldown between AI calls
 
   const askAI = useCallback(async (question: string) => {
-    // Skip very short or meaningless transcripts
+    // Skip very short or meaningless transcripts — don't speak, just log
     const trimmed = question.trim();
-    if (trimmed.length < 4 || trimmed.split(/\s+/).length < 2) {
-      addAlert(`I heard "${trimmed}". Could you say more? Try a full sentence or say Help.`);
+    if (trimmed.length < 6 || trimmed.split(/\s+/).length < 3) {
+      // Silently ignore — don't interrupt with "I heard..." messages
       return;
     }
 
