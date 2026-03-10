@@ -16,6 +16,7 @@ import {
   HelpCircle,
   Settings,
   Camera,
+  Mic,
 } from "lucide-react";
 
 interface QuickActionsProps {
@@ -24,6 +25,7 @@ interface QuickActionsProps {
   hapticEnabled: boolean;
   showMap: boolean;
   cameraOn: boolean;
+  micEnabled: boolean;
   onOpenManage?: () => void;
 }
 
@@ -41,13 +43,14 @@ const actions = [
   { label: "Call", icon: Phone, command: "call", color: "bg-secondary" },
   { label: "SOS", icon: AlertTriangle, command: "emergency", color: "bg-destructive" },
   { label: "Camera On", icon: Camera, command: "camera on", toggleKey: "cameraOn", altCommand: "camera off", altLabel: "Camera Off", color: "bg-muted" },
+  { label: "Mic On", icon: Mic, command: "mic on", toggleKey: "micEnabled", altCommand: "mic off", altLabel: "Mic Off", color: "bg-muted" },
   { label: "Auto Scan", icon: RefreshCw, command: "auto scan on", toggleKey: "autoScan", altCommand: "auto scan off", altLabel: "Auto Scan Off", color: "bg-muted" },
   { label: "Haptic", icon: Vibrate, command: "haptic on", toggleKey: "hapticEnabled", altCommand: "haptic off", altLabel: "Haptic Off", color: "bg-muted" },
   { label: "Help", icon: HelpCircle, command: "help", color: "bg-muted" },
 ];
 
-const QuickActions = ({ onAction, autoScan, hapticEnabled, showMap, cameraOn, onOpenManage }: QuickActionsProps) => {
-  const toggleState: Record<string, boolean> = { autoScan, hapticEnabled, showMap, cameraOn };
+const QuickActions = ({ onAction, autoScan, hapticEnabled, showMap, cameraOn, micEnabled, onOpenManage }: QuickActionsProps) => {
+  const toggleState: Record<string, boolean> = { autoScan, hapticEnabled, showMap, cameraOn, micEnabled };
 
   return (
     <section className="p-3 bg-card border-t border-border" aria-label="Quick actions">

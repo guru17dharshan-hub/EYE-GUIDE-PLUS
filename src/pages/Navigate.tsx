@@ -1,7 +1,7 @@
 // @refresh reset
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, Camera, Eye, Globe, Loader2, MapPin, QrCode } from "lucide-react";
+import { AlertTriangle, Camera, Eye, Globe, Loader2, MapPin, Mic, MicOff, QrCode } from "lucide-react";
 import { getProximityVibration, startProximityPulse } from "@/utils/haptics";
 import { useSpeech } from "@/hooks/useSpeech";
 import { useVoiceCommand } from "@/hooks/useVoiceCommand";
@@ -45,6 +45,7 @@ const Navigate = () => {
   const [cameraOn, setCameraOn] = useState(true);
   const [cameraExpanded, setCameraExpanded] = useState(false);
   const [showManage, setShowManage] = useState(false);
+  const [micEnabled, setMicEnabled] = useState(true);
   const autoScanRef = useRef(false);
   const cameraRef = useRef<CameraFeedRef>(null);
   const scanningRef = useRef(false);
@@ -687,16 +688,17 @@ const Navigate = () => {
       else if (lower.includes("rate trip") || lower.includes("rate my trip") || lower.includes("trip feedback")) {
         endTrip();
       }
-      // Help
+      // Help — short spoken summary only
       else if (lower.includes("help") || lower.includes("command") || lower.includes("what can")) {
-        addAlert(
-          "Available commands: Scan, Find bus, Detect seat, Bus status, Scan card, " +
-          "Auto scan on, Auto scan off, Haptic on, Haptic off, " +
-          "Add contact, My contacts, Call, Remove contact, Emergency, SOS, " +
-          "My stop is [name], Prepare to exit, I'm okay, Rate trip, " +
-          "Where am I, Show map, Save home, Save location, My places, Go home. " +
-          "You can also ask me any question and I will answer."
-        );
+        addAlert("Say: Scan, Find bus, Bus status, Emergency, Camera on, Camera off, Mic on, Mic off, or ask me anything.");
+      }
+      // Mic toggle via voice
+      else if (lower.includes("mic off") || lower.includes("mike off") || lower.includes("mute mic") || lower.includes("stop listening")) {
+        setMicEnabled(false);
+        addAlert("Microphone turned off.");
+      } else if (lower.includes("mic on") || lower.includes("mike on") || lower.includes("unmute mic") || lower.includes("start listening")) {
+        setMicEnabled(true);
+        addAlert("Microphone turned on.");
       }
       // Language switching
       else if (lower.includes("switch to") || lower.includes("change language") || lower.includes("speak in")) {
@@ -753,7 +755,16 @@ const Navigate = () => {
   }, [autoDetectAndSwitch, addAlert, speak]);
 
   // Auto-start continuous voice recognition with selected language
-  const { isListening } = useVoiceCommand(handleVoiceCommand, true, isSpeaking, language.code, handleTranscriptRaw);
+  const { isListening, startListening, stopListening } = useVoiceCommand(handleVoiceCommand, micEnabled, isSpeaking, language.code, handleTranscriptRaw);
+
+  // Sync mic state with voice recognition
+  useEffect(() => {
+    if (micEnabled) {
+      startListening();
+    } else {
+      stopListening();
+    }
+  }, [micEnabled, startListening, stopListening]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -809,12 +820,16 @@ const Navigate = () => {
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2 text-primary" aria-live="polite">
-            <div className={`h-3 w-3 rounded-full ${isListening ? "bg-primary animate-pulse" : "bg-muted-foreground"}`} />
-            <span className="text-sm font-medium">
-              {isListening ? "Listening" : "Voice off"}
-            </span>
-          </div>
+          <button
+            onClick={() => setMicEnabled(prev => !prev)}
+            className={`flex items-center gap-2 text-sm px-3 py-2 rounded-xl transition-colors font-bold shadow-md ${
+              micEnabled ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            }`}
+            aria-label={micEnabled ? "Microphone on. Tap to mute." : "Microphone off. Tap to unmute."}
+          >
+            {micEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+            {micEnabled ? (isListening ? "Listening" : "Mic On") : "Mic Off"}
+          </button>
         </div>
       </header>
 
@@ -1060,6 +1075,7 @@ const Navigate = () => {
         hapticEnabled={hapticEnabled}
         showMap={showMap}
         cameraOn={cameraOn}
+        micEnabled={micEnabled}
         onOpenManage={() => setShowManage(true)}
       />
 
