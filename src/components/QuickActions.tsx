@@ -15,6 +15,7 @@ import {
   RefreshCw,
   HelpCircle,
   Settings,
+  Camera,
 } from "lucide-react";
 
 interface QuickActionsProps {
