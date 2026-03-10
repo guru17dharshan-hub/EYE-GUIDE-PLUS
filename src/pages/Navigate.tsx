@@ -1,7 +1,7 @@
 // @refresh reset
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, Camera, Eye, Globe, Loader2, MapPin, QrCode } from "lucide-react";
+import { AlertTriangle, Camera, Eye, Globe, Loader2, MapPin, Mic, MicOff, QrCode } from "lucide-react";
 import { getProximityVibration, startProximityPulse } from "@/utils/haptics";
 import { useSpeech } from "@/hooks/useSpeech";
 import { useVoiceCommand } from "@/hooks/useVoiceCommand";
