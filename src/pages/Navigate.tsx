@@ -1049,6 +1049,7 @@ const Navigate = () => {
         autoScan={autoScan}
         hapticEnabled={hapticEnabled}
         showMap={showMap}
+        cameraOn={cameraOn}
         onOpenManage={() => setShowManage(true)}
       />
 

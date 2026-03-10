@@ -46,8 +46,8 @@ const actions = [
   { label: "Help", icon: HelpCircle, command: "help", color: "bg-muted" },
 ];
 
-const QuickActions = ({ onAction, autoScan, hapticEnabled, showMap, onOpenManage }: QuickActionsProps) => {
-  const toggleState: Record<string, boolean> = { autoScan, hapticEnabled, showMap };
+const QuickActions = ({ onAction, autoScan, hapticEnabled, showMap, cameraOn, onOpenManage }: QuickActionsProps) => {
+  const toggleState: Record<string, boolean> = { autoScan, hapticEnabled, showMap, cameraOn };
 
   return (
     <section className="p-3 bg-card border-t border-border" aria-label="Quick actions">
