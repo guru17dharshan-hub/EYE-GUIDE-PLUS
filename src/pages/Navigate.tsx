@@ -45,6 +45,7 @@ const Navigate = () => {
   const [cameraOn, setCameraOn] = useState(true);
   const [cameraExpanded, setCameraExpanded] = useState(false);
   const [showManage, setShowManage] = useState(false);
+  const [micEnabled, setMicEnabled] = useState(true);
   const autoScanRef = useRef(false);
   const cameraRef = useRef<CameraFeedRef>(null);
   const scanningRef = useRef(false);
