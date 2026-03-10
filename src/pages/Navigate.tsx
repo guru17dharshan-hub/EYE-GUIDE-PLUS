@@ -820,12 +820,16 @@ const Navigate = () => {
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2 text-primary" aria-live="polite">
-            <div className={`h-3 w-3 rounded-full ${isListening ? "bg-primary animate-pulse" : "bg-muted-foreground"}`} />
-            <span className="text-sm font-medium">
-              {isListening ? "Listening" : "Voice off"}
-            </span>
-          </div>
+          <button
+            onClick={() => setMicEnabled(prev => !prev)}
+            className={`flex items-center gap-2 text-sm px-3 py-2 rounded-xl transition-colors font-bold shadow-md ${
+              micEnabled ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            }`}
+            aria-label={micEnabled ? "Microphone on. Tap to mute." : "Microphone off. Tap to unmute."}
+          >
+            {micEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+            {micEnabled ? (isListening ? "Listening" : "Mic On") : "Mic Off"}
+          </button>
         </div>
       </header>
 
