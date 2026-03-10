@@ -147,18 +147,13 @@ const Navigate = () => {
   }, [boardingState.isApproachingDestination, boardingState.phase, boardingState.destinationStop, buses, triggerMissedStop]);
 
   const addAlert = useCallback(
-    (message: string, vibrate = true, priority: "normal" | "high" = "normal") => {
+    (message: string, vibrate = true, priority: "normal" | "high" = "normal", spoken = true) => {
       setAlerts((prev) => [message, ...prev].slice(0, 20));
-      speak(message, priority, language.voiceLang);
-      if (vibrate && hapticEnabled && navigator.vibrate) {
-        navigator.vibrate(200);
+      if (spoken) {
+        speak(message, priority, language.voiceLang);
       }
-      // Design principle: Critical alerts are repeated twice with vibration
-      if (priority === "high") {
-        setTimeout(() => {
-          speak(message, priority, language.voiceLang);
-          if (hapticEnabled && navigator.vibrate) navigator.vibrate([300, 100, 300]);
-        }, 3000);
+      if (vibrate && hapticEnabled && navigator.vibrate) {
+        navigator.vibrate(priority === "high" ? [300, 100, 300] : 200);
       }
     },
     [speak, hapticEnabled, language.voiceLang]
@@ -229,10 +224,10 @@ const Navigate = () => {
   const AI_COOLDOWN_MS = 4000; // 4 second cooldown between AI calls
 
   const askAI = useCallback(async (question: string) => {
-    // Skip very short or meaningless transcripts
+    // Skip very short or meaningless transcripts — don't speak, just log
     const trimmed = question.trim();
-    if (trimmed.length < 4 || trimmed.split(/\s+/).length < 2) {
-      addAlert(`I heard "${trimmed}". Could you say more? Try a full sentence or say Help.`);
+    if (trimmed.length < 6 || trimmed.split(/\s+/).length < 3) {
+      // Silently ignore — don't interrupt with "I heard..." messages
       return;
     }
 
@@ -244,7 +239,7 @@ const Navigate = () => {
     lastAiCallRef.current = now;
 
     setAiThinking(true);
-    addAlert("Let me think about that…", false);
+    addAlert("Thinking…", false, "normal", false); // visual only, no speech
     try {
       const { data, error } = await supabase.functions.invoke("ask-ai", {
         body: { question: trimmed, language: language.shortCode },
@@ -524,13 +519,13 @@ const Navigate = () => {
       }
       // Navigation commands
       else if (lower.includes("find") && lower.includes("bus")) {
-        addAlert("Scanning for buses…");
+        addAlert("Scanning for buses…", false, "normal", false);
         analyzeFrame();
       } else if (lower.includes("detect") && lower.includes("seat")) {
-        addAlert("Scanning for available seats…");
+        addAlert("Scanning for seats…", false, "normal", false);
         analyzeFrame();
       } else if (lower.includes("scan") || lower.includes("look") || lower.includes("what") && lower.includes("see")) {
-        addAlert("Scanning surroundings…");
+        addAlert("Scanning…", false, "normal", false);
         analyzeFrame();
       }
       // Auto scan toggle
@@ -762,9 +757,7 @@ const Navigate = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      speak(
-        "Navigation mode active. Voice control is on. Point your camera ahead. You can ask me any question or say Help for commands."
-      );
+      speak("Navigation active. Say Help for commands.");
     }, 500);
     return () => clearTimeout(timer);
   }, [speak]);
