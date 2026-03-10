@@ -525,6 +525,14 @@ const Navigate = () => {
         setAutoScan(false);
         addAlert("Auto scan disabled.");
       }
+      // Camera toggle
+      else if (lower.includes("camera on") || lower.includes("turn on camera") || lower.includes("enable camera") || lower.includes("start camera")) {
+        setCameraOn(true);
+        addAlert("Camera turned on.");
+      } else if (lower.includes("camera off") || lower.includes("turn off camera") || lower.includes("disable camera") || lower.includes("stop camera")) {
+        setCameraOn(false);
+        addAlert("Camera turned off.");
+      }
       // Haptic toggle
       else if (lower.includes("haptic on") || lower.includes("vibration on")) {
         setHapticEnabled(true);
