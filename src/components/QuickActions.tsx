@@ -16,6 +16,24 @@ import {
   HelpCircle,
   Settings,
   Camera,
+  Mic,
+} from "lucide-react";
+  Bus,
+  MapPin,
+  Map,
+  Home,
+  Save,
+  Phone,
+  UserPlus,
+  Users,
+  AlertTriangle,
+  Volume2,
+  VolumeX,
+  Vibrate,
+  RefreshCw,
+  HelpCircle,
+  Settings,
+  Camera,
 } from "lucide-react";
 
 interface QuickActionsProps {
