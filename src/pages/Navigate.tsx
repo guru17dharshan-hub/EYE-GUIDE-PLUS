@@ -757,9 +757,7 @@ const Navigate = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      speak(
-        "Navigation mode active. Voice control is on. Point your camera ahead. You can ask me any question or say Help for commands."
-      );
+      speak("Navigation active. Say Help for commands.");
     }, 500);
     return () => clearTimeout(timer);
   }, [speak]);
