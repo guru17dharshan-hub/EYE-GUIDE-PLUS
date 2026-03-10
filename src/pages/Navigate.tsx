@@ -688,16 +688,17 @@ const Navigate = () => {
       else if (lower.includes("rate trip") || lower.includes("rate my trip") || lower.includes("trip feedback")) {
         endTrip();
       }
-      // Help
+      // Help — short spoken summary only
       else if (lower.includes("help") || lower.includes("command") || lower.includes("what can")) {
-        addAlert(
-          "Available commands: Scan, Find bus, Detect seat, Bus status, Scan card, " +
-          "Auto scan on, Auto scan off, Haptic on, Haptic off, " +
-          "Add contact, My contacts, Call, Remove contact, Emergency, SOS, " +
-          "My stop is [name], Prepare to exit, I'm okay, Rate trip, " +
-          "Where am I, Show map, Save home, Save location, My places, Go home. " +
-          "You can also ask me any question and I will answer."
-        );
+        addAlert("Say: Scan, Find bus, Bus status, Emergency, Camera on, Camera off, Mic on, Mic off, or ask me anything.");
+      }
+      // Mic toggle via voice
+      else if (lower.includes("mic off") || lower.includes("mike off") || lower.includes("mute mic") || lower.includes("stop listening")) {
+        setMicEnabled(false);
+        addAlert("Microphone turned off.");
+      } else if (lower.includes("mic on") || lower.includes("mike on") || lower.includes("unmute mic") || lower.includes("start listening")) {
+        setMicEnabled(true);
+        addAlert("Microphone turned on.");
       }
       // Language switching
       else if (lower.includes("switch to") || lower.includes("change language") || lower.includes("speak in")) {
