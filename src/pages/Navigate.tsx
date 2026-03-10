@@ -42,6 +42,7 @@ const Navigate = () => {
   const { position, error: geoError } = useGeolocation(true);
   const { locations, setHome, addLocation, removeLocation, getHome, getFrequent } = useSavedLocations();
   const [showMap, setShowMap] = useState(false);
+  const [cameraOn, setCameraOn] = useState(true);
   const [cameraExpanded, setCameraExpanded] = useState(false);
   const [showManage, setShowManage] = useState(false);
   const autoScanRef = useRef(false);
