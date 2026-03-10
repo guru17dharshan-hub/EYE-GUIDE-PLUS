@@ -812,10 +812,17 @@ const Navigate = () => {
       <section
         className={`relative flex items-start gap-3 p-3 bg-card border-b border-border cursor-pointer ${cameraExpanded ? "flex-col" : ""}`}
         aria-label="Camera feed — tap to enlarge"
-        onClick={() => setCameraExpanded((prev) => !prev)}
+        onClick={() => cameraOn && setCameraExpanded((prev) => !prev)}
       >
         <div className={`relative rounded-xl overflow-hidden border border-border shrink-0 transition-all duration-300 ${cameraExpanded ? "w-full h-[300px]" : "w-32 h-24"}`}>
-          <CameraFeed ref={cameraRef} />
+          {cameraOn ? (
+            <CameraFeed ref={cameraRef} />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full bg-muted gap-2 p-4">
+              <Camera className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+              <p className="text-xs text-muted-foreground text-center">Camera off</p>
+            </div>
+          )}
         </div>
         {!cameraExpanded && (
           <div className="flex-1 flex items-center gap-2 min-h-[96px]">
