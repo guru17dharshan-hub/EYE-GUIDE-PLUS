@@ -519,13 +519,13 @@ const Navigate = () => {
       }
       // Navigation commands
       else if (lower.includes("find") && lower.includes("bus")) {
-        addAlert("Scanning for buses…");
+        addAlert("Scanning for buses…", false, "normal", false);
         analyzeFrame();
       } else if (lower.includes("detect") && lower.includes("seat")) {
-        addAlert("Scanning for available seats…");
+        addAlert("Scanning for seats…", false, "normal", false);
         analyzeFrame();
       } else if (lower.includes("scan") || lower.includes("look") || lower.includes("what") && lower.includes("see")) {
-        addAlert("Scanning surroundings…");
+        addAlert("Scanning…", false, "normal", false);
         analyzeFrame();
       }
       // Auto scan toggle
