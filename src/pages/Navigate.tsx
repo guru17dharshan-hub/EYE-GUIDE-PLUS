@@ -239,7 +239,7 @@ const Navigate = () => {
     lastAiCallRef.current = now;
 
     setAiThinking(true);
-    addAlert("Let me think about that…", false);
+    addAlert("Thinking…", false, "normal", false); // visual only, no speech
     try {
       const { data, error } = await supabase.functions.invoke("ask-ai", {
         body: { question: trimmed, language: language.shortCode },
