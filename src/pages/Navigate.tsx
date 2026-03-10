@@ -1075,6 +1075,7 @@ const Navigate = () => {
         hapticEnabled={hapticEnabled}
         showMap={showMap}
         cameraOn={cameraOn}
+        micEnabled={micEnabled}
         onOpenManage={() => setShowManage(true)}
       />
 
