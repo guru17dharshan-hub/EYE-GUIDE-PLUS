@@ -42,6 +42,7 @@ const Navigate = () => {
   const { position, error: geoError } = useGeolocation(true);
   const { locations, setHome, addLocation, removeLocation, getHome, getFrequent } = useSavedLocations();
   const [showMap, setShowMap] = useState(false);
+  const [cameraOn, setCameraOn] = useState(true);
   const [cameraExpanded, setCameraExpanded] = useState(false);
   const [showManage, setShowManage] = useState(false);
   const autoScanRef = useRef(false);
@@ -524,6 +525,14 @@ const Navigate = () => {
         setAutoScan(false);
         addAlert("Auto scan disabled.");
       }
+      // Camera toggle
+      else if (lower.includes("camera on") || lower.includes("turn on camera") || lower.includes("enable camera") || lower.includes("start camera")) {
+        setCameraOn(true);
+        addAlert("Camera turned on.");
+      } else if (lower.includes("camera off") || lower.includes("turn off camera") || lower.includes("disable camera") || lower.includes("stop camera")) {
+        setCameraOn(false);
+        addAlert("Camera turned off.");
+      }
       // Haptic toggle
       else if (lower.includes("haptic on") || lower.includes("vibration on")) {
         setHapticEnabled(true);
@@ -803,10 +812,17 @@ const Navigate = () => {
       <section
         className={`relative flex items-start gap-3 p-3 bg-card border-b border-border cursor-pointer ${cameraExpanded ? "flex-col" : ""}`}
         aria-label="Camera feed — tap to enlarge"
-        onClick={() => setCameraExpanded((prev) => !prev)}
+        onClick={() => cameraOn && setCameraExpanded((prev) => !prev)}
       >
         <div className={`relative rounded-xl overflow-hidden border border-border shrink-0 transition-all duration-300 ${cameraExpanded ? "w-full h-[300px]" : "w-32 h-24"}`}>
-          <CameraFeed ref={cameraRef} />
+          {cameraOn ? (
+            <CameraFeed ref={cameraRef} />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full bg-muted gap-2 p-4">
+              <Camera className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+              <p className="text-xs text-muted-foreground text-center">Camera off</p>
+            </div>
+          )}
         </div>
         {!cameraExpanded && (
           <div className="flex-1 flex items-center gap-2 min-h-[96px]">
@@ -1033,6 +1049,7 @@ const Navigate = () => {
         autoScan={autoScan}
         hapticEnabled={hapticEnabled}
         showMap={showMap}
+        cameraOn={cameraOn}
         onOpenManage={() => setShowManage(true)}
       />
 
