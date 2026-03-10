@@ -225,12 +225,29 @@ const Navigate = () => {
     }
   }, [addAlert, hapticEnabled, boardingState.phase, getPromptContext, processDetection]);
 
+  const lastAiCallRef = useRef<number>(0);
+  const AI_COOLDOWN_MS = 4000; // 4 second cooldown between AI calls
+
   const askAI = useCallback(async (question: string) => {
+    // Skip very short or meaningless transcripts
+    const trimmed = question.trim();
+    if (trimmed.length < 4 || trimmed.split(/\s+/).length < 2) {
+      addAlert(`I heard "${trimmed}". Could you say more? Try a full sentence or say Help.`);
+      return;
+    }
+
+    // Client-side rate limiting
+    const now = Date.now();
+    if (now - lastAiCallRef.current < AI_COOLDOWN_MS) {
+      return; // silently skip, too soon
+    }
+    lastAiCallRef.current = now;
+
     setAiThinking(true);
     addAlert("Let me think about that…", false);
     try {
       const { data, error } = await supabase.functions.invoke("ask-ai", {
-        body: { question, language: language.shortCode },
+        body: { question: trimmed, language: language.shortCode },
       });
       if (error) {
         console.error("Ask AI error:", error);
