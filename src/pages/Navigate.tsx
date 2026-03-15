@@ -397,6 +397,17 @@ const Navigate = () => {
   const handleVoiceCommand = useCallback(
     (command: string) => {
       const lower = command.toLowerCase();
+
+      // Keep recognizer active to avoid browser mic on/off chime.
+      // When muted, ignore everything except explicit mic-on commands.
+      if (!micEnabled) {
+        if (lower.includes("mic on") || lower.includes("mike on") || lower.includes("unmute mic") || lower.includes("start listening")) {
+          setMicEnabled(true);
+          addAlert("Microphone on.", false, "normal", false);
+        }
+        return;
+      }
+
       setVoiceTranscripts((prev) => [`🎙️ ${command}`, ...prev].slice(0, 10));
 
       // ---- Trip feedback state machine (highest priority) ----
