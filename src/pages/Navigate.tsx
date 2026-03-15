@@ -705,9 +705,11 @@ const Navigate = () => {
       }
       // Mic toggle via voice — silent, visual-only feedback
       else if (lower.includes("mic off") || lower.includes("mike off") || lower.includes("mute mic") || lower.includes("stop listening")) {
+        if (navigator.vibrate) navigator.vibrate(0);
         setMicEnabled(false);
         addAlert("Microphone off.", false, "normal", false);
       } else if (lower.includes("mic on") || lower.includes("mike on") || lower.includes("unmute mic") || lower.includes("start listening")) {
+        if (navigator.vibrate) navigator.vibrate(0);
         setMicEnabled(true);
         addAlert("Microphone on.", false, "normal", false);
       }
@@ -827,7 +829,10 @@ const Navigate = () => {
             )}
           </div>
           <button
-            onClick={() => setMicEnabled(prev => !prev)}
+            onClick={() => {
+              if (navigator.vibrate) navigator.vibrate(0);
+              setMicEnabled(prev => !prev);
+            }}
             className={`flex items-center gap-2 text-sm px-3 py-2 rounded-xl transition-colors font-bold shadow-md ${
               micEnabled ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-destructive text-destructive-foreground hover:bg-destructive/90"
             }`}
