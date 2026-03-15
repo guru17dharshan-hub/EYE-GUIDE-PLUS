@@ -397,6 +397,17 @@ const Navigate = () => {
   const handleVoiceCommand = useCallback(
     (command: string) => {
       const lower = command.toLowerCase();
+
+      // Keep recognizer active to avoid browser mic on/off chime.
+      // When muted, ignore everything except explicit mic-on commands.
+      if (!micEnabled) {
+        if (lower.includes("mic on") || lower.includes("mike on") || lower.includes("unmute mic") || lower.includes("start listening")) {
+          setMicEnabled(true);
+          addAlert("Microphone on.", false, "normal", false);
+        }
+        return;
+      }
+
       setVoiceTranscripts((prev) => [`🎙️ ${command}`, ...prev].slice(0, 10));
 
       // ---- Trip feedback state machine (highest priority) ----
@@ -719,7 +730,7 @@ const Navigate = () => {
         askAI(command);
       }
     },
-    [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI, contacts, addContact, removeContact, callContact, extractPhoneFromSpeech, position, setHome, addLocation, getHome, getFrequent, locations, scanFromDataUrl, qrSupported, fallDetected, confirmSafe, setDestination, isFeedbackActive, processFeedbackInput, cancelFeedback, endTrip, languages, setLanguage, speak]
+    [addAlert, handleSOS, navigate, analyzeFrame, buses, askAI, contacts, addContact, removeContact, callContact, extractPhoneFromSpeech, position, setHome, addLocation, getHome, getFrequent, locations, scanFromDataUrl, qrSupported, fallDetected, confirmSafe, setDestination, isFeedbackActive, processFeedbackInput, cancelFeedback, endTrip, languages, setLanguage, speak, micEnabled]
   );
 
   // Sync TTS language
@@ -744,6 +755,8 @@ const Navigate = () => {
   // Auto-detect language from raw transcript
   const prevLangRef = useRef(language.shortCode);
   const handleTranscriptRaw = useCallback((transcript: string) => {
+    if (!micEnabled) return;
+
     const before = prevLangRef.current;
     const detected = autoDetectAndSwitch(transcript);
     if (detected.shortCode !== before) {
@@ -752,19 +765,12 @@ const Navigate = () => {
       speak(confirmation, "high", detected.voiceLang);
       addAlert(`🌐 ${confirmation}`);
     }
-  }, [autoDetectAndSwitch, addAlert, speak]);
+  }, [autoDetectAndSwitch, addAlert, speak, micEnabled]);
 
-  // Auto-start continuous voice recognition with selected language
-  const { isListening, startListening, stopListening } = useVoiceCommand(handleVoiceCommand, micEnabled, isSpeaking, language.code, handleTranscriptRaw);
+  // Keep recognition running; mic toggle only mutes command handling to avoid browser chime.
+  const { isListening } = useVoiceCommand(handleVoiceCommand, true, isSpeaking, language.code, handleTranscriptRaw);
 
-  // Sync mic state with voice recognition
-  useEffect(() => {
-    if (micEnabled) {
-      startListening();
-    } else {
-      stopListening();
-    }
-  }, [micEnabled, startListening, stopListening]);
+  // Intentionally no start/stop on mic toggle (prevents browser-level mic chime).
 
   useEffect(() => {
     const timer = setTimeout(() => {
