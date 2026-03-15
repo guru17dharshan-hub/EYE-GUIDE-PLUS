@@ -770,14 +770,7 @@ const Navigate = () => {
   // Keep recognition running; mic toggle only mutes command handling to avoid browser chime.
   const { isListening } = useVoiceCommand(handleVoiceCommand, true, isSpeaking, language.code, handleTranscriptRaw);
 
-  // Sync mic state with voice recognition
-  useEffect(() => {
-    if (micEnabled) {
-      startListening();
-    } else {
-      stopListening();
-    }
-  }, [micEnabled, startListening, stopListening]);
+  // Intentionally no start/stop on mic toggle (prevents browser-level mic chime).
 
   useEffect(() => {
     const timer = setTimeout(() => {
