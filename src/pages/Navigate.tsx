@@ -692,13 +692,13 @@ const Navigate = () => {
       else if (lower.includes("help") || lower.includes("command") || lower.includes("what can")) {
         addAlert("Say: Scan, Find bus, Bus status, Emergency, Camera on, Camera off, Mic on, Mic off, or ask me anything.");
       }
-      // Mic toggle via voice
+      // Mic toggle via voice — silent, visual-only feedback
       else if (lower.includes("mic off") || lower.includes("mike off") || lower.includes("mute mic") || lower.includes("stop listening")) {
         setMicEnabled(false);
-        addAlert("Microphone turned off.");
+        addAlert("Microphone off.", false, "normal", false);
       } else if (lower.includes("mic on") || lower.includes("mike on") || lower.includes("unmute mic") || lower.includes("start listening")) {
         setMicEnabled(true);
-        addAlert("Microphone turned on.");
+        addAlert("Microphone on.", false, "normal", false);
       }
       // Language switching
       else if (lower.includes("switch to") || lower.includes("change language") || lower.includes("speak in")) {
