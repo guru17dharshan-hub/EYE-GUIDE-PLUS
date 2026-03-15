@@ -755,6 +755,8 @@ const Navigate = () => {
   // Auto-detect language from raw transcript
   const prevLangRef = useRef(language.shortCode);
   const handleTranscriptRaw = useCallback((transcript: string) => {
+    if (!micEnabled) return;
+
     const before = prevLangRef.current;
     const detected = autoDetectAndSwitch(transcript);
     if (detected.shortCode !== before) {
@@ -763,7 +765,7 @@ const Navigate = () => {
       speak(confirmation, "high", detected.voiceLang);
       addAlert(`🌐 ${confirmation}`);
     }
-  }, [autoDetectAndSwitch, addAlert, speak]);
+  }, [autoDetectAndSwitch, addAlert, speak, micEnabled]);
 
   // Auto-start continuous voice recognition with selected language
   const { isListening, startListening, stopListening } = useVoiceCommand(handleVoiceCommand, micEnabled, isSpeaking, language.code, handleTranscriptRaw);
