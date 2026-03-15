@@ -767,8 +767,8 @@ const Navigate = () => {
     }
   }, [autoDetectAndSwitch, addAlert, speak, micEnabled]);
 
-  // Auto-start continuous voice recognition with selected language
-  const { isListening, startListening, stopListening } = useVoiceCommand(handleVoiceCommand, micEnabled, isSpeaking, language.code, handleTranscriptRaw);
+  // Keep recognition running; mic toggle only mutes command handling to avoid browser chime.
+  const { isListening } = useVoiceCommand(handleVoiceCommand, true, isSpeaking, language.code, handleTranscriptRaw);
 
   // Sync mic state with voice recognition
   useEffect(() => {
