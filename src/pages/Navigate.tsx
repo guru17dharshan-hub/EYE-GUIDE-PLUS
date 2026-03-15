@@ -705,9 +705,11 @@ const Navigate = () => {
       }
       // Mic toggle via voice — silent, visual-only feedback
       else if (lower.includes("mic off") || lower.includes("mike off") || lower.includes("mute mic") || lower.includes("stop listening")) {
+        if (navigator.vibrate) navigator.vibrate(0);
         setMicEnabled(false);
         addAlert("Microphone off.", false, "normal", false);
       } else if (lower.includes("mic on") || lower.includes("mike on") || lower.includes("unmute mic") || lower.includes("start listening")) {
+        if (navigator.vibrate) navigator.vibrate(0);
         setMicEnabled(true);
         addAlert("Microphone on.", false, "normal", false);
       }
