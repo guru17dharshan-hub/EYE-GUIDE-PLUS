@@ -2,6 +2,7 @@ import { useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Volume2, ArrowRight } from "lucide-react";
 import logo from "@/assets/logo.png";
+import banner from "@/assets/eyeguide-banner.jpeg";
 import { Button } from "@/components/ui/button";
 import { useSpeech } from "@/hooks/useSpeech";
 import { useVoiceCommand } from "@/hooks/useVoiceCommand";
