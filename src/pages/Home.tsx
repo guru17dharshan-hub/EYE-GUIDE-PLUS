@@ -60,7 +60,7 @@ const Home = () => {
       aria-label="EyeGuide Plus Home Screen"
     >
       <div className="text-center space-y-4">
-        <img src={logo} alt="EyeGuide+ Logo" className="h-32 w-auto mx-auto" />
+        <img src={banner} alt="EyeGuide+ Banner" className="w-full max-w-md rounded-2xl mx-auto shadow-lg" />
         <p className="text-xl text-muted-foreground max-w-md" aria-live="polite">
           Your AI-powered navigation assistant for visually impaired users.
         </p>
